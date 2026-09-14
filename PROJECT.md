@@ -31,3 +31,22 @@ To be decided after architecture and research.
 
 Build a production-style RAG application that goes beyond simple
 document question-answering.
+
+## MVP Features
+
+1. Analyze a GitHub repository
+2. Ask questions about the codebase
+3. Find relevant files, functions, and classes
+4. Explain relationships between components
+5. Investigate possible bugs using code and Git history
+6. Analyze the possible impact of code changes
+7. Provide evidence for generated answers
+
+## Target User
+
+Software developers working with unfamiliar or large codebases.
+
+## Core Goal
+
+Help developers understand and investigate software repositories
+faster than manually searching through files and Git history.
