@@ -1,6 +1,7 @@
 fastapi
 uvicorn
 httpx
+httpx2
 tree-sitter
 tree-sitter-language-pack
 pytest
