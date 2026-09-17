@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+httpx
+tree-sitter
+tree-sitter-language-pack
+pytest
