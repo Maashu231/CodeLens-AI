@@ -5,3 +5,5 @@ httpx2
 tree-sitter
 tree-sitter-language-pack
 pytest
+sentence-transformers
+qdrant-client
