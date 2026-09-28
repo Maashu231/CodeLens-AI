@@ -2,6 +2,7 @@ from embedding_provider import VoyageCodeEmbeddingProvider
 from embedding_text import build_embedding_text
 from ingestion_service import ingest_repository
 from vector_store import VectorStore
+from reranker import rerank_results
 
 
 def index_repository(owner: str, repo: str) -> int:
@@ -42,6 +43,17 @@ def search_repository(query: str, limit: int = 5):
     store = VectorStore()
 
     try:
-        return store.search(query_vector, limit)
+        candidates = store.search(
+            query_vector,
+            limit=10
+        )
+
+        return rerank_results(
+            query,
+            candidates,
+            limit=limit
+        )
+
     finally:
         store.close()
+        

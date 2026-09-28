@@ -35,6 +35,7 @@ def create_chunks(file: dict, repository: str):
     chunks = []
 
     analysis = file.get("analysis")
+    imports = analysis.get("imports", []) if analysis else []
 
     if file["language"] == "python" and analysis:
         for function in analysis["functions"]:
@@ -66,7 +67,8 @@ def create_chunks(file: dict, repository: str):
                     symbol_type="function",
                     start_line=start_line,
                     end_line=end_line,
-                    content=content
+                    content=content,
+                    imports=imports
                 )
             )
 
@@ -93,7 +95,8 @@ def create_chunks(file: dict, repository: str):
                 symbol_type="file",
                 start_line=start_line,
                 end_line=end_line,
-                content=file["content"]
+                content=file["content"],
+                imports=imports
             )
         )
 

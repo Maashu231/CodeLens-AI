@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -13,3 +13,4 @@ class CodeChunk:
     start_line: int
     end_line: int
     content: str
+    imports: list[str] = field(default_factory=list)

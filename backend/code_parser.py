@@ -45,7 +45,9 @@ def extract_functions(tree):
             if parameters_node:
                 for child in parameters_node.children:
                     if child.type == "identifier":
-                        parameters.append(get_node_text(child))
+                        parameters.append(
+                            get_node_text(child)
+                        )
 
             calls = []
             returns = []
@@ -55,23 +57,42 @@ def extract_functions(tree):
                     function_node = child.child_by_field_name("function")
 
                     if function_node:
-                        calls.append(get_node_text(function_node))
+                        calls.append(
+                            get_node_text(function_node)
+                        )
 
                 elif child.type == "return_statement":
-                    returns.append(get_node_text(child).strip())
+                    returns.append(
+                        get_node_text(child).strip()
+                    )
 
                 for grandchild in child.children:
                     inspect_function_body(grandchild)
 
             inspect_function_body(node)
 
+            # Include decorators in the function's source range.
+            # Tree-sitter represents a decorated function as:
+            #
+            # decorated_definition
+            # ├── decorator
+            # └── function_definition
+            #
+            definition_node = node
+
+            if (
+                node.parent
+                and node.parent.type == "decorated_definition"
+            ):
+                definition_node = node.parent
+
             functions.append({
                 "name": name,
                 "parameters": parameters,
                 "calls": calls,
                 "returns": returns,
-                "start_line": node.start_point[0] + 1,
-                "end_line": node.end_point[0] + 1
+                "start_line": definition_node.start_point[0] + 1,
+                "end_line": definition_node.end_point[0] + 1
             })
 
         for child in node.children:
