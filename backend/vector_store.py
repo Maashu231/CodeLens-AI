@@ -16,9 +16,13 @@ QDRANT_PATH = PROJECT_ROOT / "qdrant_data"
 class VectorStore:
 
     def __init__(self):
-        self.client = QdrantClient(path=str(QDRANT_PATH))
+        self.client = QdrantClient(
+            path=str(QDRANT_PATH)
+        )
 
-        if not self.client.collection_exists(COLLECTION_NAME):
+        if not self.client.collection_exists(
+            COLLECTION_NAME
+        ):
             self.client.create_collection(
                 collection_name=COLLECTION_NAME,
                 vectors_config=models.VectorParams(
@@ -34,7 +38,10 @@ class VectorStore:
     ):
         points = []
 
-        for chunk, embedding in zip(chunks, embeddings):
+        for chunk, embedding in zip(
+            chunks,
+            embeddings
+        ):
             point_id = str(
                 uuid5(
                     NAMESPACE_URL,
@@ -61,19 +68,36 @@ class VectorStore:
                 )
             )
 
-        self.client.upsert(
-            collection_name=COLLECTION_NAME,
-            points=points,
-        )
+        if points:
+            self.client.upsert(
+                collection_name=COLLECTION_NAME,
+                points=points,
+            )
 
     def search(
         self,
         query_vector: list[float],
-        limit: int = 5
+        limit: int = 5,
+        repository: str | None = None
     ):
+        query_filter = None
+
+        if repository:
+            query_filter = models.Filter(
+                must=[
+                    models.FieldCondition(
+                        key="repository",
+                        match=models.MatchValue(
+                            value=repository
+                        ),
+                    )
+                ]
+            )
+
         return self.client.query_points(
             collection_name=COLLECTION_NAME,
             query=query_vector,
+            query_filter=query_filter,
             limit=limit,
             with_payload=True,
         ).points

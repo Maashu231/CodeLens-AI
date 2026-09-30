@@ -36,16 +36,25 @@ def index_repository(owner: str, repo: str) -> int:
     return len(chunks)
 
 
-def search_repository(query: str, limit: int = 5):
+def search_repository(
+    query: str,
+    owner: str,
+    repo: str,
+    limit: int = 5
+):
     provider = VoyageCodeEmbeddingProvider()
+
     query_vector = provider.embed_query(query)
+
+    repository = f"{owner}/{repo}"
 
     store = VectorStore()
 
     try:
         candidates = store.search(
             query_vector,
-            limit=10
+            limit=10,
+            repository=repository
         )
 
         return rerank_results(
@@ -56,4 +65,3 @@ def search_repository(query: str, limit: int = 5):
 
     finally:
         store.close()
-        
