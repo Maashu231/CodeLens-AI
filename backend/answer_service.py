@@ -39,7 +39,9 @@ def answer_question(
             "file": payload["file_path"],
             "start_line": payload["start_line"],
             "end_line": payload["end_line"],
-            "symbol": payload["symbol_name"]
+            "symbol": payload["symbol_name"],
+            "language": payload["language"],
+            "content": payload["content"]
         })
 
     return {

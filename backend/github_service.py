@@ -1,5 +1,30 @@
+import base64
+import os
 from urllib.parse import urlparse
+
 import httpx
+
+
+API_BASE = "https://api.github.com"
+
+GITHUB_HEADERS = {
+    "Accept": "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2026-03-10",
+}
+
+github_token = os.getenv("GITHUB_TOKEN")
+
+if github_token:
+    GITHUB_HEADERS["Authorization"] = f"Bearer {github_token}"
+
+
+def github_get(url: str, **kwargs):
+    return httpx.get(
+        url,
+        headers=GITHUB_HEADERS,
+        timeout=10.0,
+        **kwargs,
+    )
 
 
 def parse_github_url(repository_url: str):
@@ -15,12 +40,17 @@ def parse_github_url(repository_url: str):
         raise ValueError("URL must belong to github.com")
 
     if parsed.query or parsed.fragment:
-        raise ValueError("GitHub repository URL must not contain query parameters or fragments")
+        raise ValueError(
+            "GitHub repository URL must not contain "
+            "query parameters or fragments"
+        )
 
     parts = [part for part in parsed.path.split("/") if part]
 
     if len(parts) != 2:
-        raise ValueError("URL must point directly to a GitHub repository")
+        raise ValueError(
+            "URL must point directly to a GitHub repository"
+        )
 
     owner, repo = parts
 
@@ -28,43 +58,60 @@ def parse_github_url(repository_url: str):
 
 
 def get_repository(owner: str, repo: str):
-    url = f"https://api.github.com/repos/{owner}/{repo}"
+    url = f"{API_BASE}/repos/{owner}/{repo}"
 
-    response = httpx.get(url, timeout=10.0)
+    response = github_get(url)
     response.raise_for_status()
 
     return response.json()
 
-def get_repository_tree(owner: str, repo: str, branch: str):
-    branch_url = f"https://api.github.com/repos/{owner}/{repo}/branches/{branch}"
 
-    branch_response = httpx.get(branch_url, timeout=10.0)
+def get_repository_tree(
+    owner: str,
+    repo: str,
+    branch: str
+):
+    branch_url = (
+        f"{API_BASE}/repos/"
+        f"{owner}/{repo}/branches/{branch}"
+    )
+
+    branch_response = github_get(branch_url)
     branch_response.raise_for_status()
 
-    tree_sha = branch_response.json()["commit"]["commit"]["tree"]["sha"]
+    tree_sha = (
+        branch_response
+        .json()["commit"]["commit"]["tree"]["sha"]
+    )
 
-    tree_url = f"https://api.github.com/repos/{owner}/{repo}/git/trees/{tree_sha}"
+    tree_url = (
+        f"{API_BASE}/repos/"
+        f"{owner}/{repo}/git/trees/{tree_sha}"
+    )
 
-    tree_response = httpx.get(
+    tree_response = github_get(
         tree_url,
         params={"recursive": "1"},
-        timeout=10.0
     )
     tree_response.raise_for_status()
 
     return tree_response.json()
 
-import base64
-import httpx
 
+def get_file_content(
+    owner: str,
+    repo: str,
+    path: str,
+    branch: str
+):
+    url = (
+        f"{API_BASE}/repos/"
+        f"{owner}/{repo}/contents/{path}"
+    )
 
-def get_file_content(owner: str, repo: str, path: str, branch: str):
-    url = f"https://api.github.com/repos/{owner}/{repo}/contents/{path}"
-
-    response = httpx.get(
+    response = github_get(
         url,
         params={"ref": branch},
-        timeout=10.0
     )
     response.raise_for_status()
 
@@ -73,6 +120,8 @@ def get_file_content(owner: str, repo: str, path: str, branch: str):
     if data.get("type") != "file":
         raise ValueError(f"{path} is not a file")
 
-    content = base64.b64decode(data["content"]).decode("utf-8")
+    content = base64.b64decode(
+        data["content"]
+    ).decode("utf-8")
 
     return content

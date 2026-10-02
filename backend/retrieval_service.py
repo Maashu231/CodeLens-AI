@@ -17,23 +17,59 @@ def index_repository(owner: str, repo: str) -> int:
     if not chunks:
         return 0
 
-    provider = VoyageCodeEmbeddingProvider()
-
-    embedding_texts = [
-        build_embedding_text(chunk)
-        for chunk in chunks
-    ]
-
-    embeddings = provider.embed_documents(embedding_texts)
+    repository_name = f"{owner}/{repo}"
 
     store = VectorStore()
 
     try:
-        store.add_chunks(chunks, embeddings)
+        existing_chunk_ids = (
+            store.get_repository_chunk_ids(
+                repository_name
+            )
+        )
+
+        current_chunk_ids = {
+            chunk.chunk_id
+            for chunk in chunks
+        }
+
+        new_or_changed_chunks = [
+            chunk
+            for chunk in chunks
+            if chunk.chunk_id
+            not in existing_chunk_ids
+        ]
+
+        deleted_chunk_ids = (
+            existing_chunk_ids - current_chunk_ids
+        )
+
+        if deleted_chunk_ids:
+            store.delete_chunks(
+                deleted_chunk_ids
+            )
+
+        if new_or_changed_chunks:
+            provider = VoyageCodeEmbeddingProvider()
+
+            embedding_texts = [
+                build_embedding_text(chunk)
+                for chunk in new_or_changed_chunks
+            ]
+
+            embeddings = provider.embed_documents(
+                embedding_texts
+            )
+
+            store.add_chunks(
+                new_or_changed_chunks,
+                embeddings
+            )
+
+        return len(chunks)
+
     finally:
         store.close()
-
-    return len(chunks)
 
 
 def search_repository(

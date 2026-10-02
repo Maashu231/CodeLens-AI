@@ -31,6 +31,15 @@ class VectorStore:
                 ),
             )
 
+    @staticmethod
+    def point_id(chunk_id: str) -> str:
+        return str(
+            uuid5(
+                NAMESPACE_URL,
+                chunk_id
+            )
+        )
+
     def add_chunks(
         self,
         chunks: list[CodeChunk],
@@ -42,12 +51,7 @@ class VectorStore:
             chunks,
             embeddings
         ):
-            point_id = str(
-                uuid5(
-                    NAMESPACE_URL,
-                    chunk.chunk_id
-                )
-            )
+            point_id = self.point_id(chunk.chunk_id)
 
             points.append(
                 models.PointStruct(
@@ -73,6 +77,65 @@ class VectorStore:
                 collection_name=COLLECTION_NAME,
                 points=points,
             )
+
+    def get_repository_chunk_ids(
+        self,
+        repository: str
+    ) -> set[str]:
+        existing_ids = set()
+        offset = None
+
+        repository_filter = models.Filter(
+            must=[
+                models.FieldCondition(
+                    key="repository",
+                    match=models.MatchValue(
+                        value=repository
+                    ),
+                )
+            ]
+        )
+
+        while True:
+            records, offset = self.client.scroll(
+                collection_name=COLLECTION_NAME,
+                scroll_filter=repository_filter,
+                limit=100,
+                offset=offset,
+                with_payload=True,
+                with_vectors=False,
+            )
+
+            for record in records:
+                chunk_id = record.payload.get("chunk_id")
+
+                if chunk_id:
+                    existing_ids.add(chunk_id)
+
+            if offset is None:
+                break
+
+        return existing_ids
+
+    def delete_chunks(
+        self,
+        chunk_ids: set[str]
+    ):
+        if not chunk_ids:
+            return
+
+        point_ids = [
+            self.point_id(chunk_id)
+            for chunk_id in chunk_ids
+        ]
+
+        self.client.delete(
+            collection_name=COLLECTION_NAME,
+            points_selector=models.PointIdsList(
+                points=point_ids
+            ),
+            wait=True,
+        )
 
     def search(
         self,
