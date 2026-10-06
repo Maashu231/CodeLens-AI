@@ -3,30 +3,45 @@ from uuid import NAMESPACE_URL, uuid5
 
 from qdrant_client import QdrantClient, models
 
+from embedding_provider import (
+    get_embedding_dimension,
+)
 from models import CodeChunk
 
-
-COLLECTION_NAME = "codelens_chunks"
-VECTOR_SIZE = 1024
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 QDRANT_PATH = PROJECT_ROOT / "qdrant_data"
 
 
 class VectorStore:
-
     def __init__(self):
+        self.embedding_dimension = get_embedding_dimension()
+
+        provider_name = __import__(
+            "os"
+        ).getenv(
+            "EMBEDDING_PROVIDER",
+            "local",
+        ).strip().lower()
+
+        self.collection_name = (
+            f"codelens_chunks_{provider_name}"
+        )
+
         self.client = QdrantClient(
             path=str(QDRANT_PATH)
         )
 
+        self._ensure_collection()
+
+    def _ensure_collection(self):
         if not self.client.collection_exists(
-            COLLECTION_NAME
+            self.collection_name
         ):
             self.client.create_collection(
-                collection_name=COLLECTION_NAME,
+                collection_name=self.collection_name,
                 vectors_config=models.VectorParams(
-                    size=VECTOR_SIZE,
+                    size=self.embedding_dimension,
                     distance=models.Distance.COSINE,
                 ),
             )
@@ -36,26 +51,26 @@ class VectorStore:
         return str(
             uuid5(
                 NAMESPACE_URL,
-                chunk_id
+                chunk_id,
             )
         )
 
     def add_chunks(
         self,
         chunks: list[CodeChunk],
-        embeddings: list[list[float]]
+        embeddings: list[list[float]],
     ):
         points = []
 
         for chunk, embedding in zip(
             chunks,
-            embeddings
+            embeddings,
         ):
-            point_id = self.point_id(chunk.chunk_id)
-
             points.append(
                 models.PointStruct(
-                    id=point_id,
+                    id=self.point_id(
+                        chunk.chunk_id
+                    ),
                     vector=embedding,
                     payload={
                         "chunk_id": chunk.chunk_id,
@@ -74,13 +89,13 @@ class VectorStore:
 
         if points:
             self.client.upsert(
-                collection_name=COLLECTION_NAME,
+                collection_name=self.collection_name,
                 points=points,
             )
 
     def get_repository_chunk_ids(
         self,
-        repository: str
+        repository: str,
     ) -> set[str]:
         existing_ids = set()
         offset = None
@@ -98,7 +113,7 @@ class VectorStore:
 
         while True:
             records, offset = self.client.scroll(
-                collection_name=COLLECTION_NAME,
+                collection_name=self.collection_name,
                 scroll_filter=repository_filter,
                 limit=100,
                 offset=offset,
@@ -107,7 +122,9 @@ class VectorStore:
             )
 
             for record in records:
-                chunk_id = record.payload.get("chunk_id")
+                chunk_id = record.payload.get(
+                    "chunk_id"
+                )
 
                 if chunk_id:
                     existing_ids.add(chunk_id)
@@ -119,7 +136,7 @@ class VectorStore:
 
     def delete_chunks(
         self,
-        chunk_ids: set[str]
+        chunk_ids: set[str],
     ):
         if not chunk_ids:
             return
@@ -130,7 +147,7 @@ class VectorStore:
         ]
 
         self.client.delete(
-            collection_name=COLLECTION_NAME,
+            collection_name=self.collection_name,
             points_selector=models.PointIdsList(
                 points=point_ids
             ),
@@ -141,7 +158,7 @@ class VectorStore:
         self,
         query_vector: list[float],
         limit: int = 5,
-        repository: str | None = None
+        repository: str | None = None,
     ):
         query_filter = None
 
@@ -158,7 +175,7 @@ class VectorStore:
             )
 
         return self.client.query_points(
-            collection_name=COLLECTION_NAME,
+            collection_name=self.collection_name,
             query=query_vector,
             query_filter=query_filter,
             limit=limit,
