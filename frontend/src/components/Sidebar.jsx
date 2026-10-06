@@ -62,8 +62,8 @@ function Sidebar({
                             <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
                                 <span
                                     className={`h-1.5 w-1.5 rounded-full ${isReady
-                                            ? "bg-emerald-400"
-                                            : "bg-slate-600"
+                                        ? "bg-emerald-400"
+                                        : "bg-slate-600"
                                         }`}
                                 />
 
@@ -106,7 +106,7 @@ function Sidebar({
 
                 <div className="mt-3 space-y-2 text-[11px] text-slate-600">
                     <div>GitHub → Parser → Chunks</div>
-                    <div>Voyage → Qdrant → Reranker</div>
+                    <div>Embeddings → Qdrant → Reranker</div>
                     <div>Evidence → LLM → Answer</div>
                 </div>
             </div>

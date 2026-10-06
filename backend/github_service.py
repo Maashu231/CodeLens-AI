@@ -78,7 +78,10 @@ def parse_github_url(repository_url: str):
     return owner, repo
 
 
-def get_repository(owner: str, repo: str):
+def get_repository(
+    owner: str,
+    repo: str
+):
     url = f"{API_BASE}/repos/{owner}/{repo}"
 
     response = github_get(url)
@@ -98,7 +101,9 @@ def get_repository_tree(
         f"{owner}/{repo}/branches/{branch}"
     )
 
-    branch_response = github_get(branch_url)
+    branch_response = github_get(
+        branch_url
+    )
 
     branch_response.raise_for_status()
 
@@ -114,7 +119,9 @@ def get_repository_tree(
 
     tree_response = github_get(
         tree_url,
-        params={"recursive": "1"},
+        params={
+            "recursive": "1"
+        },
     )
 
     tree_response.raise_for_status()
@@ -157,7 +164,9 @@ def get_file_content(
 
     response = github_get(
         url,
-        params={"ref": branch},
+        params={
+            "ref": branch
+        },
     )
 
     response.raise_for_status()
@@ -174,3 +183,71 @@ def get_file_content(
     ).decode("utf-8")
 
     return content
+
+
+def get_file_history(
+    owner: str,
+    repo: str,
+    path: str,
+    branch: str,
+    limit: int = 8,
+):
+    url = (
+        f"{API_BASE}/repos/"
+        f"{owner}/{repo}/commits"
+    )
+
+    response = github_get(
+        url,
+        params={
+            "path": path,
+            "sha": branch,
+            "per_page": min(
+                max(limit, 1),
+                20,
+            ),
+        },
+    )
+
+    response.raise_for_status()
+
+    commits = []
+
+    for commit in response.json():
+        commit_data = commit.get(
+            "commit",
+            {}
+        )
+
+        author = commit_data.get(
+            "author"
+        ) or {}
+
+        message = commit_data.get(
+            "message",
+            "",
+        ).split("\n")[0].strip()
+
+        commits.append({
+            "sha": commit.get(
+                "sha",
+                "",
+            ),
+            "short_sha": commit.get(
+                "sha",
+                "",
+            )[:7],
+            "message": message,
+            "author": author.get(
+                "name",
+                "Unknown",
+            ),
+            "date": author.get(
+                "date"
+            ),
+            "url": commit.get(
+                "html_url"
+            ),
+        })
+
+    return commits

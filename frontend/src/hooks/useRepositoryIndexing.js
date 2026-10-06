@@ -14,6 +14,8 @@ function sleep(milliseconds) {
 export function useRepositoryIndexing() {
     const [isIndexing, setIsIndexing] = useState(false);
     const [isReady, setIsReady] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const [stage, setStage] = useState("queued");
     const [chunksIndexed, setChunksIndexed] = useState(null);
     const [statusMessage, setStatusMessage] = useState(
         "Connect a GitHub repository to begin."
@@ -27,6 +29,8 @@ export function useRepositoryIndexing() {
 
         setIsIndexing(false);
         setIsReady(false);
+        setProgress(0);
+        setStage("queued");
         setChunksIndexed(null);
         setStatusMessage(
             "Connect a GitHub repository to begin."
@@ -48,21 +52,20 @@ export function useRepositoryIndexing() {
         setErrorMessage("");
         setIsIndexing(true);
         setIsReady(false);
+        setProgress(0);
+        setStage("starting");
         setChunksIndexed(null);
         setStatusMessage("Starting repository analysis...");
 
         try {
             const data = await startRepositoryIndexing(url);
 
-            /*
-             * Backward compatibility:
-             * If the backend ever returns a completed result
-             * directly, accept it.
-             */
             if (
                 data.status === "completed" &&
                 data.chunks_indexed !== undefined
             ) {
+                setProgress(100);
+                setStage("complete");
                 setChunksIndexed(data.chunks_indexed);
                 setIsReady(true);
                 setStatusMessage(
@@ -96,18 +99,23 @@ export function useRepositoryIndexing() {
                     );
                 }
 
-                const progress = job.progress ?? 0;
-                const stage = job.stage || "working";
+                const currentProgress = job.progress ?? 0;
+                const currentStage = job.stage || "working";
 
+                setProgress(currentProgress);
+                setStage(currentStage);
                 setStatusMessage(
-                    `${formatIndexingStage(stage)} · ${progress}%`
+                    formatIndexingStage(currentStage)
                 );
 
                 if (job.status === "completed") {
                     completed = true;
 
-                    const indexedChunks = job.chunks_indexed ?? 0;
+                    const indexedChunks =
+                        job.chunks_indexed ?? 0;
 
+                    setProgress(100);
+                    setStage("complete");
                     setChunksIndexed(indexedChunks);
                     setIsReady(true);
                     setStatusMessage(
@@ -121,6 +129,7 @@ export function useRepositoryIndexing() {
             }
 
             setIsReady(false);
+            setStage("failed");
 
             setErrorMessage(
                 error instanceof Error
@@ -139,6 +148,8 @@ export function useRepositoryIndexing() {
     return {
         isIndexing,
         isReady,
+        progress,
+        stage,
         chunksIndexed,
         statusMessage,
         errorMessage,

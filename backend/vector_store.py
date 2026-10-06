@@ -1,11 +1,10 @@
+import os
 from pathlib import Path
 from uuid import NAMESPACE_URL, uuid5
 
 from qdrant_client import QdrantClient, models
 
-from embedding_provider import (
-    get_embedding_dimension,
-)
+from embedding_provider import get_embedding_dimension
 from models import CodeChunk
 
 
@@ -17,9 +16,7 @@ class VectorStore:
     def __init__(self):
         self.embedding_dimension = get_embedding_dimension()
 
-        provider_name = __import__(
-            "os"
-        ).getenv(
+        provider_name = os.getenv(
             "EMBEDDING_PROVIDER",
             "local",
         ).strip().lower()
@@ -133,6 +130,45 @@ class VectorStore:
                 break
 
         return existing_ids
+
+    def get_repository_payloads(
+        self,
+        repository: str,
+    ) -> list[dict]:
+        payloads = []
+        offset = None
+
+        repository_filter = models.Filter(
+            must=[
+                models.FieldCondition(
+                    key="repository",
+                    match=models.MatchValue(
+                        value=repository
+                    ),
+                )
+            ]
+        )
+
+        while True:
+            records, offset = self.client.scroll(
+                collection_name=self.collection_name,
+                scroll_filter=repository_filter,
+                limit=100,
+                offset=offset,
+                with_payload=True,
+                with_vectors=False,
+            )
+
+            for record in records:
+                if record.payload:
+                    payloads.append(
+                        record.payload
+                    )
+
+            if offset is None:
+                break
+
+        return payloads
 
     def delete_chunks(
         self,

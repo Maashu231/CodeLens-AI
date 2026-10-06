@@ -13,6 +13,7 @@ function RepositoryCard({
     onAnalyze,
     isIndexing,
     isReady,
+    progress,
     statusMessage,
 }) {
     function handleKeyDown(event) {
@@ -45,7 +46,9 @@ function RepositoryCard({
                         <input
                             value={repositoryUrl}
                             onChange={(event) =>
-                                onRepositoryChange(event.target.value)
+                                onRepositoryChange(
+                                    event.target.value
+                                )
                             }
                             onKeyDown={handleKeyDown}
                             placeholder="https://github.com/owner/repository"
@@ -82,18 +85,54 @@ function RepositoryCard({
                     </button>
                 </div>
 
-                <div className="flex items-center gap-2 text-xs text-slate-600">
-                    {isReady ? (
-                        <CheckCircle2
-                            size={14}
-                            className="text-emerald-400"
-                        />
-                    ) : (
-                        <Bot size={14} />
-                    )}
+                {isIndexing ? (
+                    <div className="rounded-xl border border-white/7 bg-white/[0.02] p-4">
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
+                                <Loader2
+                                    size={14}
+                                    className="animate-spin text-slate-500"
+                                />
 
-                    {statusMessage}
-                </div>
+                                {statusMessage}
+                            </div>
+
+                            <span className="text-xs font-semibold tabular-nums text-slate-400">
+                                {progress}%
+                            </span>
+                        </div>
+
+                        <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/[0.05]">
+                            <div
+                                className="h-full rounded-full bg-white transition-[width] duration-500 ease-out"
+                                style={{
+                                    width: `${Math.max(
+                                        0,
+                                        Math.min(progress, 100)
+                                    )}%`,
+                                }}
+                            />
+                        </div>
+
+                        <div className="mt-2 text-[11px] text-slate-600">
+                            This runs in the background. You can wait here
+                            while CodeLens builds the semantic search index.
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-2 text-xs text-slate-600">
+                        {isReady ? (
+                            <CheckCircle2
+                                size={14}
+                                className="text-emerald-400"
+                            />
+                        ) : (
+                            <Bot size={14} />
+                        )}
+
+                        {statusMessage}
+                    </div>
+                )}
             </div>
         </section>
     );

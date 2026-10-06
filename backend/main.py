@@ -1,16 +1,23 @@
 import logging
 
 import httpx
+from architecture_service import (
+    build_repository_overview,
+)
 from fastapi import (
     BackgroundTasks,
     FastAPI,
     HTTPException,
+    Query,
     status,
 )
 from pydantic import BaseModel, Field
 
 from answer_service import answer_question
+from file_filter import is_allowed_file
 from github_service import (
+    get_file_content,
+    get_file_history,
     get_repository,
     parse_github_url,
 )
@@ -19,6 +26,7 @@ from indexing_jobs import (
     get_job,
     update_job,
 )
+from repository_service import get_allowed_files
 from retrieval_service import index_repository
 
 
@@ -59,9 +67,7 @@ class AskRequest(BaseModel):
     )
 
 
-def get_repository_owner_and_name(
-    url: str
-):
+def get_repository_owner_and_name(url: str):
     try:
         return parse_github_url(url)
 
@@ -84,7 +90,7 @@ def external_service_error(
 
     if isinstance(
         exc,
-        httpx.HTTPStatusError
+        httpx.HTTPStatusError,
     ):
         response_status = (
             exc.response.status_code
@@ -127,7 +133,7 @@ def external_service_error(
 
     if isinstance(
         exc,
-        httpx.RequestError
+        httpx.RequestError,
     ):
         return HTTPException(
             status_code=502,
@@ -152,7 +158,7 @@ def home():
 
 @app.post("/repositories")
 def add_repository(
-    request: RepositoryRequest
+    request: RepositoryRequest,
 ):
     owner, repo = (
         get_repository_owner_and_name(
@@ -163,7 +169,7 @@ def add_repository(
     try:
         repository = get_repository(
             owner,
-            repo
+            repo,
         )
 
         return {
@@ -184,14 +190,235 @@ def add_repository(
         ) from exc
 
 
+@app.get("/repositories/tree")
+def get_repository_tree_endpoint(
+    repository_url: str = Query(
+        ...,
+        min_length=1,
+    ),
+):
+    owner, repo = (
+        get_repository_owner_and_name(
+            repository_url
+        )
+    )
+
+    try:
+        return get_allowed_files(
+            owner,
+            repo,
+        )
+
+    except (
+        httpx.HTTPStatusError,
+        httpx.RequestError,
+    ) as exc:
+        raise external_service_error(
+            exc,
+            "Repository tree lookup",
+        ) from exc
+
+    except Exception as exc:
+        logger.exception(
+            "Repository tree lookup failed",
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to load repository files",
+        ) from exc
+
+
+@app.get("/repositories/file")
+def get_repository_file_endpoint(
+    repository_url: str = Query(
+        ...,
+        min_length=1,
+    ),
+    path: str = Query(
+        ...,
+        min_length=1,
+    ),
+):
+    owner, repo = (
+        get_repository_owner_and_name(
+            repository_url
+        )
+    )
+
+    if not is_allowed_file(path):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "This file type is not supported "
+                "by the repository explorer"
+            ),
+        )
+
+    try:
+        repository = get_repository(
+            owner,
+            repo,
+        )
+
+        content = get_file_content(
+            owner,
+            repo,
+            path,
+            repository["default_branch"],
+        )
+
+        return {
+            "repository": repository["name"],
+            "owner": repository[
+                "owner"
+            ]["login"],
+            "branch": repository[
+                "default_branch"
+            ],
+            "path": path,
+            "content": content,
+        }
+
+    except (
+        httpx.HTTPStatusError,
+        httpx.RequestError,
+    ) as exc:
+        raise external_service_error(
+            exc,
+            "Repository file lookup",
+        ) from exc
+
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        ) from exc
+
+    except Exception as exc:
+        logger.exception(
+            "Repository file lookup failed",
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to load repository file",
+        ) from exc
+
+
+@app.get("/repositories/history")
+def get_repository_history_endpoint(
+    repository_url: str = Query(
+        ...,
+        min_length=1,
+    ),
+    path: str = Query(
+        ...,
+        min_length=1,
+    ),
+):
+    owner, repo = (
+        get_repository_owner_and_name(
+            repository_url
+        )
+    )
+
+    if not is_allowed_file(path):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "This file type is not supported "
+                "by the repository explorer"
+            ),
+        )
+
+    try:
+        repository = get_repository(
+            owner,
+            repo,
+        )
+
+        commits = get_file_history(
+            owner,
+            repo,
+            path,
+            repository["default_branch"],
+        )
+
+        return {
+            "repository": repository["name"],
+            "owner": repository["owner"]["login"],
+            "branch": repository["default_branch"],
+            "path": path,
+            "commits": commits,
+        }
+
+    except (
+        httpx.HTTPStatusError,
+        httpx.RequestError,
+    ) as exc:
+        raise external_service_error(
+            exc,
+            "Repository history lookup",
+        ) from exc
+
+    except Exception as exc:
+        logger.exception(
+            "Repository history lookup failed",
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to load file history",
+        ) from exc
+
+@app.get("/repositories/overview")
+def get_repository_overview_endpoint(
+    repository_url: str = Query(
+        ...,
+        min_length=1,
+    ),
+):
+    owner, repo = (
+        get_repository_owner_and_name(
+            repository_url
+        )
+    )
+
+    try:
+        return build_repository_overview(
+            owner,
+            repo,
+        )
+
+    except (
+        httpx.HTTPStatusError,
+        httpx.RequestError,
+    ) as exc:
+        raise external_service_error(
+            exc,
+            "Repository overview lookup",
+        ) from exc
+
+    except Exception as exc:
+        logger.exception(
+            "Repository overview lookup failed",
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to build repository overview",
+        ) from exc
+
+
 def run_indexing_job(
     job_id: str,
     owner: str,
-    repo: str
+    repo: str,
 ):
     def progress_callback(
         stage: str,
-        progress: int
+        progress: int,
     ):
         update_job(
             job_id,
@@ -218,7 +445,7 @@ def run_indexing_job(
         chunks_indexed = index_repository(
             owner,
             repo,
-            progress_callback
+            progress_callback,
         )
 
         update_job(
@@ -264,7 +491,7 @@ def index_repository_endpoint(
 
     job_id = create_job(
         owner,
-        repo
+        repo,
     )
 
     background_tasks.add_task(
@@ -289,7 +516,9 @@ def index_repository_endpoint(
 
 
 @app.get("/repositories/jobs/{job_id}")
-def get_indexing_job(job_id: str):
+def get_indexing_job(
+    job_id: str,
+):
     job = get_job(job_id)
 
     if not job:
@@ -303,7 +532,7 @@ def get_indexing_job(job_id: str):
 
 @app.post("/ask")
 def ask_question(
-    request: AskRequest
+    request: AskRequest,
 ):
     question = request.question.strip()
 
