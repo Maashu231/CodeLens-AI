@@ -4,13 +4,17 @@ import {
     Copy,
     ExternalLink,
     FileCode2,
+    GitBranch,
     GitCommitHorizontal,
     History,
     Loader2,
     X,
 } from "lucide-react";
 
-import { getRepositoryFileHistory } from "../services/api";
+import {
+    getRepositoryFileHistory,
+    getRepositoryImpact,
+} from "../services/api";
 
 function CodeViewerModal({
     source,
@@ -18,18 +22,38 @@ function CodeViewerModal({
     onClose,
 }) {
     const [copied, setCopied] = useState(false);
+
     const [showHistory, setShowHistory] =
         useState(false);
+
     const [history, setHistory] = useState([]);
     const [isLoadingHistory, setIsLoadingHistory] =
         useState(false);
+
     const [historyError, setHistoryError] =
+        useState("");
+
+    const [showImpact, setShowImpact] =
+        useState(false);
+
+    const [impactData, setImpactData] =
+        useState(null);
+
+    const [isLoadingImpact, setIsLoadingImpact] =
+        useState(false);
+
+    const [impactError, setImpactError] =
         useState("");
 
     useEffect(() => {
         setShowHistory(false);
         setHistory([]);
         setHistoryError("");
+
+        setShowImpact(false);
+        setImpactData(null);
+        setImpactError("");
+
         setCopied(false);
     }, [source]);
 
@@ -88,9 +112,45 @@ function CodeViewerModal({
         }
     }
 
+    async function handleImpact() {
+        if (showImpact) {
+            setShowImpact(false);
+            return;
+        }
+
+        setShowImpact(true);
+
+        if (impactData) {
+            return;
+        }
+
+        setIsLoadingImpact(true);
+        setImpactError("");
+
+        try {
+            const data =
+                await getRepositoryImpact(
+                    repositoryUrl,
+                    source.file,
+                    source.symbol || null
+                );
+
+            setImpactData(data);
+        } catch (error) {
+            setImpactError(
+                error instanceof Error
+                    ? error.message
+                    : "Unable to analyze repository impact."
+            );
+        } finally {
+            setIsLoadingImpact(false);
+        }
+    }
+
     function handleClose() {
         setCopied(false);
         setShowHistory(false);
+        setShowImpact(false);
         onClose();
     }
 
@@ -131,6 +191,17 @@ function CodeViewerModal({
 
                     <div className="flex items-center gap-2">
                         <button
+                            onClick={handleImpact}
+                            className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition ${showImpact
+                                    ? "border-white/15 bg-white/[0.06] text-slate-200"
+                                    : "border-white/8 bg-white/[0.03] text-slate-500 hover:text-slate-200"
+                                }`}
+                        >
+                            <GitBranch size={14} />
+                            Impact
+                        </button>
+
+                        <button
                             onClick={handleHistory}
                             className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition ${showHistory
                                     ? "border-white/15 bg-white/[0.06] text-slate-200"
@@ -138,7 +209,6 @@ function CodeViewerModal({
                                 }`}
                         >
                             <History size={14} />
-
                             History
                         </button>
 
@@ -163,12 +233,153 @@ function CodeViewerModal({
                     </div>
                 </div>
 
+                {/* Impact */}
+                {showImpact && (
+                    <div className="border-b border-white/8 bg-[#0a0e15]">
+                        <div className="flex items-center justify-between border-b border-white/6 px-5 py-3">
+                            <div>
+                                <div className="flex items-center gap-2 text-xs font-medium text-slate-300">
+                                    <GitBranch
+                                        size={14}
+                                    />
+
+                                    Change impact analysis
+                                </div>
+
+                                <div className="mt-1 text-[11px] text-slate-700">
+                                    Code that may depend on this source
+                                </div>
+                            </div>
+
+                            {impactData && (
+                                <div className="flex items-center gap-3 text-[10px] text-slate-600">
+                                    <span>
+                                        Direct{" "}
+                                        <span className="text-slate-400">
+                                            {
+                                                impactData
+                                                    .stats
+                                                    .direct
+                                            }
+                                        </span>
+                                    </span>
+
+                                    <span>
+                                        Indirect{" "}
+                                        <span className="text-slate-400">
+                                            {
+                                                impactData
+                                                    .stats
+                                                    .indirect
+                                            }
+                                        </span>
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="max-h-72 overflow-auto p-3">
+                            {isLoadingImpact ? (
+                                <div className="flex items-center justify-center gap-2 py-8 text-xs text-slate-600">
+                                    <Loader2
+                                        size={15}
+                                        className="animate-spin"
+                                    />
+
+                                    Analyzing dependencies...
+                                </div>
+                            ) : impactError ? (
+                                <div className="px-3 py-6 text-center text-xs text-red-300">
+                                    {impactError}
+                                </div>
+                            ) : !impactData ||
+                                impactData.impacted
+                                    ?.length === 0 ? (
+                                <div className="px-3 py-6 text-center text-xs text-slate-600">
+                                    No known dependent code was found.
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {[
+                                        ...(impactData.impacted ||
+                                            []),
+                                    ]
+                                        .sort(
+                                            (a, b) =>
+                                                a.distance -
+                                                b.distance
+                                        )
+                                        .map(
+                                            (
+                                                item
+                                            ) => (
+                                                <div
+                                                    key={`${item.id}-${item.distance}`}
+                                                    className="rounded-lg border border-white/6 bg-white/[0.02] px-3 py-3"
+                                                >
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="mt-0.5 rounded-md border border-white/7 bg-white/[0.03] p-1.5 text-slate-600">
+                                                            <GitBranch
+                                                                size={
+                                                                    13
+                                                                }
+                                                            />
+                                                        </div>
+
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                <span className="font-mono text-xs text-slate-300">
+                                                                    {item.name
+                                                                        ? `${item.name}()`
+                                                                        : item.path}
+                                                                </span>
+
+                                                                <span
+                                                                    className={`rounded-full border px-2 py-0.5 text-[9px] uppercase tracking-wide ${item.impact ===
+                                                                            "direct"
+                                                                            ? "border-amber-400/15 bg-amber-400/[0.04] text-amber-300"
+                                                                            : "border-white/8 bg-white/[0.03] text-slate-500"
+                                                                        }`}
+                                                                >
+                                                                    {
+                                                                        item.impact
+                                                                    }
+                                                                </span>
+                                                            </div>
+
+                                                            <div className="mt-1 font-mono text-[10px] text-slate-600">
+                                                                {
+                                                                    item.path
+                                                                }
+                                                            </div>
+
+                                                            <div className="mt-1 text-[10px] text-slate-700">
+                                                                {item.relationship ===
+                                                                    "call"
+                                                                    ? `Called from dependency level ${item.distance}`
+                                                                    : `Imported dependency level ${item.distance}`}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )
+                                        )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* History */}
                 {showHistory && (
                     <div className="border-b border-white/8 bg-[#0a0e15]">
                         <div className="flex items-center justify-between border-b border-white/6 px-5 py-3">
                             <div>
                                 <div className="flex items-center gap-2 text-xs font-medium text-slate-300">
-                                    <GitCommitHorizontal size={14} />
+                                    <GitCommitHorizontal
+                                        size={14}
+                                    />
+
                                     Recent file history
                                 </div>
 
@@ -205,28 +416,38 @@ function CodeViewerModal({
                                     {history.map(
                                         (commit) => (
                                             <div
-                                                key={commit.sha}
+                                                key={
+                                                    commit.sha
+                                                }
                                                 className="rounded-lg px-3 py-3 transition hover:bg-white/[0.03]"
                                             >
                                                 <div className="flex items-start gap-3">
                                                     <div className="mt-0.5 rounded-md border border-white/7 bg-white/[0.03] p-1.5 text-slate-600">
                                                         <GitCommitHorizontal
-                                                            size={13}
+                                                            size={
+                                                                13
+                                                            }
                                                         />
                                                     </div>
 
                                                     <div className="min-w-0 flex-1">
                                                         <div className="text-xs leading-5 text-slate-400">
-                                                            {commit.message}
+                                                            {
+                                                                commit.message
+                                                            }
                                                         </div>
 
                                                         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-700">
                                                             <span className="font-mono">
-                                                                {commit.short_sha}
+                                                                {
+                                                                    commit.short_sha
+                                                                }
                                                             </span>
 
                                                             <span>
-                                                                {commit.author}
+                                                                {
+                                                                    commit.author
+                                                                }
                                                             </span>
 
                                                             {commit.date && (
@@ -278,41 +499,50 @@ function CodeViewerModal({
                         {source.content ? (
                             source.content
                                 .split("\n")
-                                .map((line, index) => {
-                                    const lineNumber =
-                                        source.start_line + index;
+                                .map(
+                                    (
+                                        line,
+                                        index
+                                    ) => {
+                                        const lineNumber =
+                                            source.start_line +
+                                            index;
 
-                                    const isHighlighted =
-                                        lineNumber >=
-                                        source.start_line &&
-                                        lineNumber <=
-                                        source.end_line;
+                                        const isHighlighted =
+                                            lineNumber >=
+                                            source.start_line &&
+                                            lineNumber <=
+                                            source.end_line;
 
-                                    return (
-                                        <div
-                                            key={`${lineNumber}-${index}`}
-                                            className="grid grid-cols-[64px_1fr] rounded-sm font-mono text-[13px] leading-7"
-                                        >
+                                        return (
                                             <div
-                                                className={`select-none border-r border-white/5 pr-4 text-right ${isHighlighted
-                                                        ? "text-slate-500"
-                                                        : "text-slate-700"
-                                                    }`}
+                                                key={`${lineNumber}-${index}`}
+                                                className="grid grid-cols-[64px_1fr] rounded-sm font-mono text-[13px] leading-7"
                                             >
-                                                {lineNumber}
-                                            </div>
+                                                <div
+                                                    className={`select-none border-r border-white/5 pr-4 text-right ${isHighlighted
+                                                            ? "text-slate-500"
+                                                            : "text-slate-700"
+                                                        }`}
+                                                >
+                                                    {
+                                                        lineNumber
+                                                    }
+                                                </div>
 
-                                            <div
-                                                className={`pl-4 ${isHighlighted
-                                                        ? "bg-white/[0.035] text-slate-300"
-                                                        : "text-slate-600"
-                                                    }`}
-                                            >
-                                                {line || " "}
+                                                <div
+                                                    className={`pl-4 ${isHighlighted
+                                                            ? "bg-white/[0.035] text-slate-300"
+                                                            : "text-slate-600"
+                                                        }`}
+                                                >
+                                                    {line ||
+                                                        " "}
+                                                </div>
                                             </div>
-                                        </div>
-                                    );
-                                })
+                                        );
+                                    }
+                                )
                         ) : (
                             <div className="p-10 text-center text-sm text-slate-600">
                                 Source content is not available.

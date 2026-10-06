@@ -26,6 +26,10 @@ from indexing_jobs import (
     get_job,
     update_job,
 )
+from impact_service import (
+    get_repository_dependency_graph,
+    get_repository_impact,
+)
 from repository_service import get_allowed_files
 from retrieval_service import index_repository
 
@@ -409,6 +413,103 @@ def get_repository_overview_endpoint(
             status_code=500,
             detail="Unable to build repository overview",
         ) from exc
+
+@app.get("/repositories/dependencies")
+def get_repository_dependencies_endpoint(
+    repository_url: str = Query(
+        ...,
+        min_length=1,
+    ),
+):
+    owner, repo = get_repository_owner_and_name(
+        repository_url
+    )
+
+    try:
+        return get_repository_dependency_graph(
+            owner,
+            repo,
+        )
+
+    except (
+        httpx.HTTPStatusError,
+        httpx.RequestError,
+    ) as exc:
+        raise external_service_error(
+            exc,
+            "Repository dependency lookup",
+        ) from exc
+
+    except Exception as exc:
+        logger.exception(
+            "Repository dependency lookup failed"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to build repository dependency graph",
+        ) from exc
+@app.get("/repositories/impact")
+def get_repository_impact_endpoint(
+    repository_url: str = Query(
+        ...,
+        min_length=1,
+    ),
+    path: str = Query(
+        ...,
+        min_length=1,
+    ),
+    symbol: str | None = Query(
+        default=None,
+    ),
+):
+    owner, repo = get_repository_owner_and_name(
+        repository_url
+    )
+
+    if not is_allowed_file(path):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "This file type is not supported "
+                "by impact analysis"
+            ),
+        )
+
+    try:
+        return get_repository_impact(
+            owner,
+            repo,
+            path,
+            symbol,
+        )
+
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc),
+        ) from exc
+
+    except (
+        httpx.HTTPStatusError,
+        httpx.RequestError,
+    ) as exc:
+        raise external_service_error(
+            exc,
+            "Repository impact lookup",
+        ) from exc
+
+    except Exception as exc:
+        logger.exception(
+            "Repository impact lookup failed"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to analyze repository impact",
+        ) from exc
+
+
 
 
 def run_indexing_job(

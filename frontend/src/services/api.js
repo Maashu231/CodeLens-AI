@@ -96,3 +96,22 @@ export async function getRepositoryFileHistory(
         `/repositories/history?${params.toString()}`
     );
 }
+
+export async function getRepositoryImpact(
+    repositoryUrl,
+    path,
+    symbol = null
+) {
+    const params = new URLSearchParams({
+        repository_url: repositoryUrl,
+        path,
+    });
+
+    if (symbol) {
+        params.set("symbol", symbol);
+    }
+
+    return request(
+        `/repositories/impact?${params.toString()}`
+    );
+}
