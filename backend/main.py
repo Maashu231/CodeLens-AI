@@ -30,6 +30,7 @@ from impact_service import (
     get_repository_dependency_graph,
     get_repository_impact,
 )
+from bug_investigation_service import investigate_bug
 from repository_service import get_allowed_files
 from retrieval_service import index_repository
 
@@ -507,6 +508,72 @@ def get_repository_impact_endpoint(
         raise HTTPException(
             status_code=500,
             detail="Unable to analyze repository impact",
+        ) from exc
+
+
+@app.get("/repositories/investigate")
+def investigate_repository_endpoint(
+    repository_url: str = Query(
+        ...,
+        min_length=1,
+    ),
+    question: str = Query(
+        ...,
+        min_length=1,
+    ),
+):
+    owner, repo = get_repository_owner_and_name(
+        repository_url
+    )
+
+    question = question.strip()
+
+    if not question:
+        raise HTTPException(
+            status_code=400,
+            detail="Investigation question cannot be empty",
+        )
+
+    try:
+        return investigate_bug(
+            question,
+            owner,
+            repo,
+        )
+
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        ) from exc
+
+    except (
+        httpx.HTTPStatusError,
+        httpx.RequestError,
+    ) as exc:
+        raise external_service_error(
+            exc,
+            "Bug investigation",
+        ) from exc
+
+    except RuntimeError as exc:
+        logger.exception(
+            "Bug investigation runtime error"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(exc),
+        ) from exc
+
+    except Exception as exc:
+        logger.exception(
+            "Bug investigation failed"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to investigate the reported issue",
         ) from exc
 
 

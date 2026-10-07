@@ -115,3 +115,17 @@ export async function getRepositoryImpact(
         `/repositories/impact?${params.toString()}`
     );
 }
+
+export async function investigateRepositoryBug(
+    question,
+    repositoryUrl
+) {
+    const params = new URLSearchParams({
+        repository_url: repositoryUrl,
+        question,
+    });
+
+    return request(
+        `/repositories/investigate?${params.toString()}`
+    );
+}

@@ -26,33 +26,52 @@ Rules:
 class GroqLLM:
 
     def __init__(self):
-        self.api_key = os.getenv("GROQ_API_KEY")
+        self.api_key = os.getenv(
+            "GROQ_API_KEY"
+        )
 
         if not self.api_key:
             raise RuntimeError(
                 "GROQ_API_KEY environment variable is not set"
             )
 
-    def generate(self, question: str, context: str) -> str:
+    def generate(
+        self,
+        question: str,
+        context: str,
+        system_prompt: str | None = None,
+    ) -> str:
+        effective_system_prompt = (
+            system_prompt
+            or SYSTEM_PROMPT
+        )
+
         response = httpx.post(
             API_URL,
             headers={
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json",
+                "Authorization": (
+                    f"Bearer {self.api_key}"
+                ),
+                "Content-Type": (
+                    "application/json"
+                ),
             },
             json={
                 "model": MODEL,
                 "messages": [
                     {
                         "role": "system",
-                        "content": SYSTEM_PROMPT,
+                        "content": (
+                            effective_system_prompt
+                        ),
                     },
                     {
                         "role": "user",
                         "content": (
-                            f"Repository evidence:\n\n"
+                            "Repository evidence:\n\n"
                             f"{context}\n\n"
-                            f"Question:\n{question}"
+                            "Question:\n"
+                            f"{question}"
                         ),
                     },
                 ],

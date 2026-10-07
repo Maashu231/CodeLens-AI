@@ -16,6 +16,7 @@ import CodeViewerModal from "./components/CodeViewerModal";
 
 import { useRepositoryIndexing } from "./hooks/useRepositoryIndexing";
 import { useCodeLensQuery } from "./hooks/useCodeLensQuery";
+import { useBugInvestigation } from "./hooks/useBugInvestigation";
 
 
 function App() {
@@ -24,6 +25,8 @@ function App() {
 
   const [selectedSource, setSelectedSource] =
     useState(null);
+
+  const [mode, setMode] = useState("ask");
 
   const {
     isIndexing,
@@ -48,9 +51,39 @@ function App() {
     handleQuestionKeyDown,
   } = useCodeLensQuery();
 
+  const {
+    bugQuestion,
+    setBugQuestion,
+    isInvestigating,
+    bugAnswerData,
+    bugError,
+    investigateBug,
+    resetBugInvestigation,
+    handleBugQuestionKeyDown,
+  } = useBugInvestigation();
+
+  function handleModeChange(nextMode) {
+    setMode(nextMode);
+
+    resetAnswer();
+    resetBugInvestigation();
+    setSelectedSource(null);
+  }
+
+
+  function handleInvestigate() {
+    setSelectedSource(null);
+
+    investigateBug(
+      repositoryUrl
+    );
+  }
+
 
   const errorMessage =
-    queryError || indexingError;
+    queryError ||
+    bugError ||
+    indexingError;
 
 
   function handleRepositoryChange(value) {
@@ -197,36 +230,48 @@ function App() {
 
             {/* Ask CodeLens */}
             <AskCard
-              question={
-                question
-              }
-              setQuestion={
-                setQuestion
-              }
-              isReady={
-                isReady
-              }
-              isAsking={
-                isAsking
-              }
-              answerData={
-                answerData
-              }
-              onAsk={
-                handleAsk
-              }
+              mode={mode}
+              onModeChange={handleModeChange}
+
+              question={question}
+              setQuestion={setQuestion}
+
+              bugQuestion={bugQuestion}
+              setBugQuestion={setBugQuestion}
+
+              isReady={isReady}
+
+              isAsking={isAsking}
+              isInvestigating={isInvestigating}
+
+              answerData={answerData}
+              bugAnswerData={bugAnswerData}
+
+              onAsk={handleAsk}
+              onInvestigate={handleInvestigate}
+
               onSuggestedQuestion={
                 handleSuggestedQuestion
               }
-              onQuestionKeyDown={
-                (event) =>
-                  handleQuestionKeyDown(
-                    event,
-                    repositoryUrl
-                  )
+
+              onSuggestedBugQuestion={(value) => {
+                setBugQuestion(value);
+              }}
+
+              onQuestionKeyDown={(event) =>
+                handleQuestionKeyDown(
+                  event,
+                  repositoryUrl
+                )
+              }
+
+              onBugQuestionKeyDown={(event) =>
+                handleBugQuestionKeyDown(
+                  event,
+                  repositoryUrl
+                )
               }
             />
-
 
             {/* Error */}
             <ErrorBanner
@@ -258,10 +303,13 @@ function App() {
             {/* Answer */}
             <AnswerPanel
               answerData={
-                answerData
+                mode === "bug"
+                  ? bugAnswerData
+                  : answerData
               }
               isAsking={
-                isAsking
+                isAsking ||
+                isInvestigating
               }
               onSelectSource={
                 setSelectedSource
