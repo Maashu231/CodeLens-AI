@@ -281,25 +281,6 @@ function App() {
             />
 
 
-            {/* Question loading */}
-            {isAsking && (
-              <section className="mt-5 rounded-2xl border border-white/9 bg-[#0d121b]/90 p-6">
-
-                <div className="flex items-center gap-3 text-sm text-slate-400">
-
-                  <Loader2
-                    size={17}
-                    className="animate-spin"
-                  />
-
-                  Searching the codebase and generating a grounded answer...
-
-                </div>
-
-              </section>
-            )}
-
-
             {/* Answer */}
             <AnswerPanel
               answerData={

@@ -1,3 +1,4 @@
+import json
 import os
 
 import httpx
@@ -35,17 +36,44 @@ class GroqLLM:
                 "GROQ_API_KEY environment variable is not set"
             )
 
+    def _build_payload(
+        self,
+        question: str,
+        context: str,
+        system_prompt: str | None = None,
+        stream: bool = False,
+    ) -> dict:
+        effective_system_prompt = (
+            system_prompt
+            or SYSTEM_PROMPT
+        )
+
+        return {
+            "model": MODEL,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": effective_system_prompt,
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        "Repository evidence:\n\n"
+                        f"{context}\n\n"
+                        "Question:\n"
+                        f"{question}"
+                    ),
+                },
+            ],
+            "stream": stream,
+        }
+
     def generate(
         self,
         question: str,
         context: str,
         system_prompt: str | None = None,
     ) -> str:
-        effective_system_prompt = (
-            system_prompt
-            or SYSTEM_PROMPT
-        )
-
         response = httpx.post(
             API_URL,
             headers={
@@ -56,26 +84,12 @@ class GroqLLM:
                     "application/json"
                 ),
             },
-            json={
-                "model": MODEL,
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": (
-                            effective_system_prompt
-                        ),
-                    },
-                    {
-                        "role": "user",
-                        "content": (
-                            "Repository evidence:\n\n"
-                            f"{context}\n\n"
-                            "Question:\n"
-                            f"{question}"
-                        ),
-                    },
-                ],
-            },
+            json=self._build_payload(
+                question,
+                context,
+                system_prompt,
+                stream=False,
+            ),
             timeout=60.0,
         )
 
@@ -84,3 +98,76 @@ class GroqLLM:
         data = response.json()
 
         return data["choices"][0]["message"]["content"]
+
+    def stream(
+        self,
+        question: str,
+        context: str,
+        system_prompt: str | None = None,
+    ):
+        """
+        Stream text chunks from Groq.
+
+        Groq uses the OpenAI-compatible SSE format:
+            data: {...}
+            data: {...}
+            data: [DONE]
+        """
+        with httpx.stream(
+            "POST",
+            API_URL,
+            headers={
+                "Authorization": (
+                    f"Bearer {self.api_key}"
+                ),
+                "Content-Type": (
+                    "application/json"
+                ),
+            },
+            json=self._build_payload(
+                question,
+                context,
+                system_prompt,
+                stream=True,
+            ),
+            timeout=60.0,
+        ) as response:
+
+            response.raise_for_status()
+
+            for line in response.iter_lines():
+                if not line:
+                    continue
+
+                if line.startswith("data: "):
+                    data_text = line[6:].strip()
+
+                    if data_text == "[DONE]":
+                        break
+
+                    try:
+                        data = json.loads(
+                            data_text
+                        )
+                    except json.JSONDecodeError:
+                        continue
+
+                    choices = data.get(
+                        "choices",
+                        [],
+                    )
+
+                    if not choices:
+                        continue
+
+                    delta = choices[0].get(
+                        "delta",
+                        {}
+                    )
+
+                    content = delta.get(
+                        "content"
+                    )
+
+                    if content:
+                        yield content

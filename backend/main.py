@@ -30,6 +30,10 @@ from impact_service import (
     get_repository_dependency_graph,
     get_repository_impact,
 )
+from streaming_answer_service import (
+    prepare_streaming_answer,
+)
+from llm_service import GroqLLM
 from bug_investigation_service import investigate_bug
 from repository_service import get_allowed_files
 from retrieval_service import index_repository
@@ -750,4 +754,125 @@ def ask_question(
         raise HTTPException(
             status_code=500,
             detail="Unable to answer the question",
+        ) from exc
+
+@app.post("/ask/stream")
+def ask_question_stream(
+    request: AskRequest,
+):
+    question = request.question.strip()
+
+    if not question:
+        raise HTTPException(
+            status_code=400,
+            detail="Question cannot be empty",
+        )
+
+    owner, repo = (
+        get_repository_owner_and_name(
+            request.repository_url
+        )
+    )
+
+    try:
+        prepared = (
+            prepare_streaming_answer(
+                question,
+                owner,
+                repo,
+            )
+        )
+
+        if not prepared:
+            raise HTTPException(
+                status_code=404,
+                detail=(
+                    "I couldn't find relevant evidence "
+                    "in the repository."
+                ),
+            )
+
+        llm = GroqLLM()
+
+        def event_stream():
+            import json
+
+            sources_event = {
+                "sources": prepared["sources"],
+            }
+
+            yield (
+                "event: sources\n"
+                f"data: {json.dumps(sources_event)}\n\n"
+            )
+
+            try:
+                for chunk in llm.stream(
+                    question,
+                    prepared["context"],
+                ):
+                    yield (
+                        "event: chunk\n"
+                        f"data: {json.dumps({'text': chunk})}\n\n"
+                    )
+
+                yield (
+                    "event: done\n"
+                    "data: {}\n\n"
+                )
+
+            except Exception as exc:
+                logger.exception(
+                    "Streaming question answering failed"
+                )
+
+                yield (
+                    "event: error\n"
+                    f"data: {json.dumps({'message': str(exc)})}\n\n"
+                )
+
+        from fastapi.responses import (
+            StreamingResponse,
+        )
+
+        return StreamingResponse(
+            event_stream(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            },
+        )
+
+    except HTTPException:
+        raise
+
+    except (
+        httpx.HTTPStatusError,
+        httpx.RequestError,
+    ) as exc:
+        raise external_service_error(
+            exc,
+            "Streaming question answering",
+        ) from exc
+
+    except RuntimeError as exc:
+        logger.exception(
+            "Streaming question answering runtime error"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(exc),
+        ) from exc
+
+    except Exception as exc:
+        logger.exception(
+            "Unexpected streaming question answering error"
+        )
+
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to stream the answer",
         ) from exc

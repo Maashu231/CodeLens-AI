@@ -10,7 +10,7 @@ function AnswerPanel({
     isAsking,
     onSelectSource,
 }) {
-    if (!answerData || isAsking) {
+    if (!answerData) {
         return null;
     }
 
@@ -20,6 +20,11 @@ function AnswerPanel({
                 <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
                     <Bot size={16} />
                     CodeLens Answer
+                    {answerData.isStreaming && (
+                        <span className="ml-2 text-xs text-slate-500">
+                            Generating...
+                        </span>
+                    )}
                 </div>
             </div>
 

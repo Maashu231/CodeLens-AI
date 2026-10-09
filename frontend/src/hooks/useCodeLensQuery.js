@@ -1,15 +1,25 @@
 import { useState } from "react";
-import { askRepositoryQuestion } from "../services/api";
+import {
+    streamRepositoryQuestion,
+} from "../services/api";
 
 export function useCodeLensQuery() {
-    const [question, setQuestion] = useState("");
-    const [isAsking, setIsAsking] = useState(false);
-    const [answerData, setAnswerData] = useState(null);
-    const [errorMessage, setErrorMessage] = useState("");
+    const [question, setQuestion] =
+        useState("");
+
+    const [isAsking, setIsAsking] =
+        useState(false);
+
+    const [answerData, setAnswerData] =
+        useState(null);
+
+    const [errorMessage, setErrorMessage] =
+        useState("");
 
     function resetAnswer() {
         setAnswerData(null);
         setErrorMessage("");
+        setIsAsking(false);
     }
 
     function handleSuggestedQuestion(value) {
@@ -18,8 +28,11 @@ export function useCodeLensQuery() {
     }
 
     async function askQuestion(repositoryUrl) {
-        const trimmedQuestion = question.trim();
-        const trimmedRepositoryUrl = repositoryUrl.trim();
+        const trimmedQuestion =
+            question.trim();
+
+        const trimmedRepositoryUrl =
+            repositoryUrl.trim();
 
         if (!trimmedRepositoryUrl) {
             setErrorMessage(
@@ -37,33 +50,118 @@ export function useCodeLensQuery() {
 
         setErrorMessage("");
         setIsAsking(true);
-        setAnswerData(null);
+
+        setAnswerData({
+            answer: "",
+            sources: [],
+            isStreaming: true,
+        });
 
         try {
-            const data = await askRepositoryQuestion(
+            await streamRepositoryQuestion(
                 trimmedQuestion,
-                trimmedRepositoryUrl
+                trimmedRepositoryUrl,
+                ({ event, data }) => {
+                    if (event === "sources") {
+                        let sources = [];
+
+                        try {
+                            sources =
+                                JSON.parse(data);
+                        } catch {
+                            sources = [];
+                        }
+
+                        setAnswerData(
+                            (previous) => ({
+                                ...(previous || {}),
+                                sources,
+                                answer:
+                                    previous?.answer ||
+                                    "",
+                                isStreaming: true,
+                            })
+                        );
+                    }
+
+                    if (event === "chunk") {
+                        setAnswerData(
+                            (previous) => ({
+                                ...(previous || {}),
+                                answer:
+                                    (previous?.answer ||
+                                        "") +
+                                    data,
+                                sources:
+                                    previous?.sources ||
+                                    [],
+                                isStreaming: true,
+                            })
+                        );
+                    }
+
+                    if (event === "done") {
+                        setAnswerData(
+                            (previous) => ({
+                                ...(previous || {}),
+                                isStreaming: false,
+                            })
+                        );
+                    }
+
+                    if (event === "error") {
+                        let message =
+                            data ||
+                            "Streaming failed.";
+
+                        try {
+                            const parsed =
+                                JSON.parse(data);
+
+                            message =
+                                parsed?.message ||
+                                message;
+                        } catch {
+                            // Keep original message.
+                        }
+
+                        throw new Error(message);
+                    }
+                }
             );
 
-            setAnswerData(data);
+            setAnswerData(
+                (previous) => ({
+                    ...(previous || {}),
+                    isStreaming: false,
+                })
+            );
         } catch (error) {
             setErrorMessage(
                 error instanceof Error
                     ? error.message
                     : "Something went wrong while generating the answer."
             );
+
+            setAnswerData(null);
         } finally {
             setIsAsking(false);
         }
     }
 
-    function handleQuestionKeyDown(event, repositoryUrl) {
+    function handleQuestionKeyDown(
+        event,
+        repositoryUrl
+    ) {
         if (
             event.key === "Enter" &&
             (event.ctrlKey || event.metaKey)
         ) {
             event.preventDefault();
-            askQuestion(repositoryUrl);
+
+            if (!isAsking) {
+                askQuestion(repositoryUrl);
+            }
         }
     }
 
