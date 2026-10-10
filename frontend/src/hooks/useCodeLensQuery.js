@@ -1,20 +1,33 @@
 import { useState } from "react";
-import {
-    streamRepositoryQuestion,
-} from "../services/api";
+import { streamRepositoryQuestion } from "../services/api";
+
+function extractChunkText(data) {
+    try {
+        const parsed = JSON.parse(data);
+
+        if (typeof parsed === "string") {
+            return parsed;
+        }
+
+        if (typeof parsed?.text === "string") {
+            return parsed.text;
+        }
+
+        if (typeof parsed?.content === "string") {
+            return parsed.content;
+        }
+    } catch {
+        // Ordinary text chunks do not need JSON parsing.
+    }
+
+    return data;
+}
 
 export function useCodeLensQuery() {
-    const [question, setQuestion] =
-        useState("");
-
-    const [isAsking, setIsAsking] =
-        useState(false);
-
-    const [answerData, setAnswerData] =
-        useState(null);
-
-    const [errorMessage, setErrorMessage] =
-        useState("");
+    const [question, setQuestion] = useState("");
+    const [isAsking, setIsAsking] = useState(false);
+    const [answerData, setAnswerData] = useState(null);
+    const [errorMessage, setErrorMessage] = useState("");
 
     function resetAnswer() {
         setAnswerData(null);
@@ -28,23 +41,16 @@ export function useCodeLensQuery() {
     }
 
     async function askQuestion(repositoryUrl) {
-        const trimmedQuestion =
-            question.trim();
-
-        const trimmedRepositoryUrl =
-            repositoryUrl.trim();
+        const trimmedQuestion = question.trim();
+        const trimmedRepositoryUrl = repositoryUrl.trim();
 
         if (!trimmedRepositoryUrl) {
-            setErrorMessage(
-                "Connect a GitHub repository first."
-            );
+            setErrorMessage("Connect a GitHub repository first.");
             return;
         }
 
         if (!trimmedQuestion) {
-            setErrorMessage(
-                "Enter a question about the codebase."
-            );
+            setErrorMessage("Enter a question about the codebase.");
             return;
         }
 
@@ -66,63 +72,51 @@ export function useCodeLensQuery() {
                         let sources = [];
 
                         try {
-                            sources =
-                                JSON.parse(data);
+                            const parsed = JSON.parse(data);
+
+                            if (Array.isArray(parsed)) {
+                                sources = parsed;
+                            } else if (Array.isArray(parsed?.sources)) {
+                                sources = parsed.sources;
+                            }
                         } catch {
                             sources = [];
                         }
 
-                        setAnswerData(
-                            (previous) => ({
-                                ...(previous || {}),
-                                sources,
-                                answer:
-                                    previous?.answer ||
-                                    "",
-                                isStreaming: true,
-                            })
-                        );
+                        setAnswerData((previous) => ({
+                            ...(previous || {}),
+                            sources,
+                            answer: previous?.answer || "",
+                            isStreaming: true,
+                        }));
                     }
 
                     if (event === "chunk") {
-                        setAnswerData(
-                            (previous) => ({
-                                ...(previous || {}),
-                                answer:
-                                    (previous?.answer ||
-                                        "") +
-                                    data,
-                                sources:
-                                    previous?.sources ||
-                                    [],
-                                isStreaming: true,
-                            })
-                        );
+                        const chunkText = extractChunkText(data);
+
+                        setAnswerData((previous) => ({
+                            ...(previous || {}),
+                            answer: `${previous?.answer || ""}${chunkText}`,
+                            sources: previous?.sources || [],
+                            isStreaming: true,
+                        }));
                     }
 
                     if (event === "done") {
-                        setAnswerData(
-                            (previous) => ({
-                                ...(previous || {}),
-                                isStreaming: false,
-                            })
-                        );
+                        setAnswerData((previous) => ({
+                            ...(previous || {}),
+                            isStreaming: false,
+                        }));
                     }
 
                     if (event === "error") {
-                        let message =
-                            data ||
-                            "Streaming failed.";
+                        let message = data || "Streaming failed.";
 
                         try {
-                            const parsed =
-                                JSON.parse(data);
-
-                            message =
-                                parsed?.message ||
-                                message;
+                            const parsed = JSON.parse(data);
+                            message = parsed?.message || parsed?.detail || message;
                         } catch {
-                            // Keep original message.
+                            // Keep the original error message.
                         }
 
                         throw new Error(message);
@@ -130,12 +124,10 @@ export function useCodeLensQuery() {
                 }
             );
 
-            setAnswerData(
-                (previous) => ({
-                    ...(previous || {}),
-                    isStreaming: false,
-                })
-            );
+            setAnswerData((previous) => ({
+                ...(previous || {}),
+                isStreaming: false,
+            }));
         } catch (error) {
             setErrorMessage(
                 error instanceof Error
@@ -149,10 +141,7 @@ export function useCodeLensQuery() {
         }
     }
 
-    function handleQuestionKeyDown(
-        event,
-        repositoryUrl
-    ) {
+    function handleQuestionKeyDown(event, repositoryUrl) {
         if (
             event.key === "Enter" &&
             (event.ctrlKey || event.metaKey)

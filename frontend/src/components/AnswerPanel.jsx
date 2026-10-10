@@ -14,6 +14,10 @@ function AnswerPanel({
         return null;
     }
 
+    const sources = Array.isArray(answerData.sources)
+        ? answerData.sources
+        : [];
+
     return (
         <section className="mt-5 overflow-hidden rounded-2xl border border-white/9 bg-[#0d121b]/90 shadow-2xl shadow-black/20">
             <div className="border-b border-white/8 px-5 py-4 sm:px-6">
@@ -144,7 +148,7 @@ function AnswerPanel({
                     </div>
 
                     <div className="grid gap-3">
-                        {answerData.sources?.map(
+                        {sources.map(
                             (source, index) => (
                                 <button
                                     key={`${source.file}-${source.start_line}-${index}`}
