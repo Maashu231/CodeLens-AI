@@ -146,24 +146,37 @@ EMBEDDING_PROVIDER=local
 
 **Never commit real API keys or tokens.**
 
+
 ### 4. Start the backend
 
-From the project root:
+From the project root, run:
 
 ```powershell
 cd backend
-..\ .venv\Scripts\python.exe -m uvicorn main:app --reload --env-file .env
-```
-
-If copying the command, use the path without the space after `..\`:
-
-```powershell
 ..\.venv\Scripts\python.exe -m uvicorn main:app --reload --env-file .env
 ```
 
-The backend runs at `http://127.0.0.1:8000`.
+The backend will run at:
 
-Interactive API documentation is available at `http://127.0.0.1:8000/docs`.
+`http://127.0.0.1:8000`
+
+Interactive API documentation is available at:
+
+`http://127.0.0.1:8000/docs`
+
+Keep this terminal running.
+
+### 5. Start the frontend
+
+Open a second PowerShell terminal in the project root and run:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Open the local URL printed by Vite in your terminal.
 
 ### 5. Start the frontend
 
