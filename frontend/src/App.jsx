@@ -1,8 +1,5 @@
 import { useState } from "react";
-import {
-  Bot,
-  Loader2,
-} from "lucide-react";
+import { Bot } from "lucide-react";
 
 import Sidebar from "./components/Sidebar";
 import Header from "./components/Header";
@@ -288,13 +285,7 @@ function App() {
                   ? bugAnswerData
                   : answerData
               }
-              isAsking={
-                isAsking ||
-                isInvestigating
-              }
-              onSelectSource={
-                setSelectedSource
-              }
+              onSelectSource={setSelectedSource}
             />
 
           </div>
@@ -306,15 +297,14 @@ function App() {
 
       {/* Source viewer */}
       <CodeViewerModal
-        source={
+        key={
           selectedSource
+            ? `${selectedSource.file}:${selectedSource.start_line}-${selectedSource.end_line}:${selectedSource.symbol || ""}`
+            : "no-source"
         }
+        source={selectedSource}
         repositoryUrl={repositoryUrl}
-        onClose={() =>
-          setSelectedSource(
-            null
-          )
-        }
+        onClose={() => setSelectedSource(null)}
       />
 
     </div>

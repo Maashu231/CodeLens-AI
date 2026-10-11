@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
     CalendarDays,
     Copy,
@@ -44,18 +44,6 @@ function CodeViewerModal({
 
     const [impactError, setImpactError] =
         useState("");
-
-    useEffect(() => {
-        setShowHistory(false);
-        setHistory([]);
-        setHistoryError("");
-
-        setShowImpact(false);
-        setImpactData(null);
-        setImpactError("");
-
-        setCopied(false);
-    }, [source]);
 
     if (!source) {
         return null;
@@ -193,8 +181,8 @@ function CodeViewerModal({
                         <button
                             onClick={handleImpact}
                             className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition ${showImpact
-                                    ? "border-white/15 bg-white/[0.06] text-slate-200"
-                                    : "border-white/8 bg-white/[0.03] text-slate-500 hover:text-slate-200"
+                                ? "border-white/15 bg-white/[0.06] text-slate-200"
+                                : "border-white/8 bg-white/[0.03] text-slate-500 hover:text-slate-200"
                                 }`}
                         >
                             <GitBranch size={14} />
@@ -204,8 +192,8 @@ function CodeViewerModal({
                         <button
                             onClick={handleHistory}
                             className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition ${showHistory
-                                    ? "border-white/15 bg-white/[0.06] text-slate-200"
-                                    : "border-white/8 bg-white/[0.03] text-slate-500 hover:text-slate-200"
+                                ? "border-white/15 bg-white/[0.06] text-slate-200"
+                                : "border-white/8 bg-white/[0.03] text-slate-500 hover:text-slate-200"
                                 }`}
                         >
                             <History size={14} />
@@ -336,9 +324,9 @@ function CodeViewerModal({
 
                                                                 <span
                                                                     className={`rounded-full border px-2 py-0.5 text-[9px] uppercase tracking-wide ${item.impact ===
-                                                                            "direct"
-                                                                            ? "border-amber-400/15 bg-amber-400/[0.04] text-amber-300"
-                                                                            : "border-white/8 bg-white/[0.03] text-slate-500"
+                                                                        "direct"
+                                                                        ? "border-amber-400/15 bg-amber-400/[0.04] text-amber-300"
+                                                                        : "border-white/8 bg-white/[0.03] text-slate-500"
                                                                         }`}
                                                                 >
                                                                     {
@@ -521,8 +509,8 @@ function CodeViewerModal({
                                             >
                                                 <div
                                                     className={`select-none border-r border-white/5 pr-4 text-right ${isHighlighted
-                                                            ? "text-slate-500"
-                                                            : "text-slate-700"
+                                                        ? "text-slate-500"
+                                                        : "text-slate-700"
                                                         }`}
                                                 >
                                                     {
@@ -532,8 +520,8 @@ function CodeViewerModal({
 
                                                 <div
                                                     className={`pl-4 ${isHighlighted
-                                                            ? "bg-white/[0.035] text-slate-300"
-                                                            : "text-slate-600"
+                                                        ? "bg-white/[0.035] text-slate-300"
+                                                        : "text-slate-600"
                                                         }`}
                                                 >
                                                     {line ||

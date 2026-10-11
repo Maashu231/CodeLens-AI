@@ -7,7 +7,6 @@ import {
 
 function AnswerPanel({
     answerData,
-    isAsking,
     onSelectSource,
 }) {
     if (!answerData) {
