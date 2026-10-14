@@ -1,6 +1,35 @@
+# Python
 .venv/
 __pycache__/
 *.pyc
-qdrant_data/.env
-.env
+*.pyo
+*.egg-info/
+
+# Node
+node_modules/
+
+# Build output
+dist/
+
+# Test & cache
+.pytest_cache/
+
+# Runtime data
 qdrant_data/
+
+# Environment secrets
+.env
+.env.local
+.env.*.local
+
+# OS files
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
