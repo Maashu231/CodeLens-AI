@@ -9,6 +9,7 @@ export default defineConfig({
   ],
 
   server: {
+    port: 5173,
     proxy: {
       "/repositories": {
         target: "http://127.0.0.1:8000",
@@ -16,6 +17,11 @@ export default defineConfig({
       },
 
       "/ask": {
+        target: "http://127.0.0.1:8000",
+        changeOrigin: true,
+      },
+
+      "/health": {
         target: "http://127.0.0.1:8000",
         changeOrigin: true,
       },

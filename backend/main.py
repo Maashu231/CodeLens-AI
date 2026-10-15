@@ -1,4 +1,5 @@
 import logging
+import os
 
 import httpx
 from architecture_service import (
@@ -11,6 +12,7 @@ from fastapi import (
     Query,
     status,
 )
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from answer_service import answer_question
@@ -52,6 +54,36 @@ app = FastAPI(
     description="AI-powered codebase intelligence API",
     version="1.0.0",
 )
+
+frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:5173")
+origins = list({
+    frontend_url,
+    "http://127.0.0.1:5173",
+    "http://localhost:5173",
+})
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.on_event("startup")
+def validate_configuration():
+    missing = []
+    if not os.getenv("GROQ_API_KEY"):
+        missing.append("GROQ_API_KEY")
+
+    if missing:
+        logger.warning(
+            "Missing environment variable: %s. LLM question-answering features require this key.",
+            ", ".join(missing),
+        )
+    else:
+        logger.info("Configuration validated successfully")
 
 
 class RepositoryRequest(BaseModel):
@@ -162,6 +194,14 @@ def external_service_error(
 def home():
     return {
         "message": "CodeLens AI backend is running"
+    }
+
+
+@app.get("/health")
+def health_check():
+    return {
+        "status": "healthy",
+        "version": "1.0.0",
     }
 
 
