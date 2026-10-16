@@ -8,13 +8,36 @@ import main
 client = TestClient(main.app)
 
 
-def test_health_check():
+def test_root_endpoint():
     response = client.get("/")
 
     assert response.status_code == 200
     assert response.json() == {
         "message": "CodeLens AI backend is running"
     }
+
+
+def test_health_check():
+    response = client.get("/health")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "status": "healthy",
+        "version": "1.0.0",
+    }
+
+
+def test_cors_headers():
+    response = client.options(
+        "/health",
+        headers={
+            "Origin": "http://localhost:5173",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers.get("access-control-allow-origin") == "http://localhost:5173"
 
 
 def test_invalid_repository_url():

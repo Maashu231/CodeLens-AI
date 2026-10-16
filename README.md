@@ -178,18 +178,6 @@ npm run dev
 
 Open the local URL printed by Vite in your terminal.
 
-### 5. Start the frontend
-
-Open a second terminal:
-
-```powershell
-cd frontend
-npm install
-npm run dev
-```
-
-Open the local URL printed by Vite in your terminal.
-
 ### 6. Analyze a repository
 
 1. Enter a GitHub repository URL.

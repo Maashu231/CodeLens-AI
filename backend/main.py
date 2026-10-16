@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 import logging
 import os
 
@@ -49,10 +50,27 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    missing = []
+    if not os.getenv("GROQ_API_KEY"):
+        missing.append("GROQ_API_KEY")
+
+    if missing:
+        logger.warning(
+            "Missing environment variable: %s. LLM question-answering features require this key.",
+            ", ".join(missing),
+        )
+    else:
+        logger.info("Configuration validated successfully")
+    yield
+
+
 app = FastAPI(
     title="CodeLens AI",
     description="AI-powered codebase intelligence API",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:5173")
@@ -69,21 +87,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.on_event("startup")
-def validate_configuration():
-    missing = []
-    if not os.getenv("GROQ_API_KEY"):
-        missing.append("GROQ_API_KEY")
-
-    if missing:
-        logger.warning(
-            "Missing environment variable: %s. LLM question-answering features require this key.",
-            ", ".join(missing),
-        )
-    else:
-        logger.info("Configuration validated successfully")
 
 
 class RepositoryRequest(BaseModel):

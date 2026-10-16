@@ -14,6 +14,7 @@ import CodeViewerModal from "./components/CodeViewerModal";
 import { useRepositoryIndexing } from "./hooks/useRepositoryIndexing";
 import { useCodeLensQuery } from "./hooks/useCodeLensQuery";
 import { useBugInvestigation } from "./hooks/useBugInvestigation";
+import { useBackendHealth } from "./hooks/useBackendHealth";
 
 
 function App() {
@@ -24,6 +25,12 @@ function App() {
     useState(null);
 
   const [mode, setMode] = useState("ask");
+
+  const {
+    status: backendStatus,
+    version: backendVersion,
+    checkHealth: refreshBackendHealth,
+  } = useBackendHealth();
 
   const {
     isIndexing,
@@ -142,6 +149,9 @@ function App() {
 
           <Header
             isReady={isReady}
+            backendStatus={backendStatus}
+            backendVersion={backendVersion}
+            onRefreshHealth={refreshBackendHealth}
           />
 
 

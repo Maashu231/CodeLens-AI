@@ -14,6 +14,10 @@ async function request(url, options = {}) {
     return data;
 }
 
+export async function getBackendHealth() {
+    return request("/health");
+}
+
 export async function startRepositoryIndexing(repositoryUrl) {
     return request("/repositories/index", {
         method: "POST",
