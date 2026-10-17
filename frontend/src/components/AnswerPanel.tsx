@@ -1,0 +1,221 @@
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import {
+    Bot,
+    FileCode2,
+} from "lucide-react";
+
+import { SkeletonLine } from "./ui/Skeleton";
+import type { Source } from "../types";
+
+interface AnswerPanelProps {
+    answerData: {
+        answer: string;
+        sources: Source[];
+        is_streaming: boolean;
+    } | null;
+    onSelectSource: (source: Source) => void;
+    showToast?: (type: string, message: string) => void;
+}
+
+function AnswerPanel({
+    answerData,
+    onSelectSource,
+}: AnswerPanelProps) {
+    if (!answerData) {
+        return null;
+    }
+
+    const sources: Source[] = answerData.sources;
+
+    return (
+        <section className="relative overflow-hidden rounded-2xl border border-white/9 bg-[#0d121b]/80 shadow-2xl shadow-black/20 glass-card">
+            <div className="absolute top-4 right-4 h-8 w-8 rounded-full bg-indigo-500/20 blur-sm" />
+
+            <div className="relative z-10 border-b border-white/8 px-5 py-4 sm:px-6">
+                <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
+                    <Bot size={16} className="text-indigo-400" />
+                    CodeLens Answer
+                    {answerData.is_streaming && (
+                        <span className="ml-2 text-xs text-slate-500 animate-pulse">
+                            Generating...
+                        </span>
+                    )}
+                </div>
+            </div>
+
+            <div className="relative z-10 p-5 sm:p-6">
+                <div className="prose prose-invert max-w-none text-sm leading-7 text-slate-300">
+                    <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                            code({
+                                inline,
+                                children,
+                                ...props
+                            }: any) {
+                                return inline ? (
+                                    <code
+                                        className="rounded-md border border-white/10 bg-white/[0.05] px-1.5 py-0.5 font-mono text-[13px] text-slate-200"
+                                        {...props}
+                                    >
+                                        {children}
+                                    </code>
+                                ) : (
+                                    <pre className="my-4 overflow-x-auto rounded-xl border border-white/8 bg-[#070a10] p-4">
+                                        <code
+                                            className="font-mono text-[13px] leading-6 text-slate-300"
+                                            {...props}
+                                        >
+                                            {children}
+                                        </code>
+                                    </pre>
+                                );
+                            },
+
+                            p({ children }: { children: React.ReactNode }) {
+                                return (
+                                    <p className="mb-4 last:mb-0">
+                                        {children}
+                                    </p>
+                                );
+                            },
+
+                            ul({ children }: { children: React.ReactNode }) {
+                                return (
+                                    <ul className="mb-4 list-disc space-y-1 pl-5">
+                                        {children}
+                                    </ul>
+                                );
+                            },
+
+                            ol({ children }: { children: React.ReactNode }) {
+                                return (
+                                    <ol className="mb-4 list-decimal space-y-1 pl-5">
+                                        {children}
+                                    </ol>
+                                );
+                            },
+
+                            h1({ children }: { children: React.ReactNode }) {
+                                return (
+                                    <h1 className="mb-4 text-xl font-semibold text-white">
+                                        {children}
+                                    </h1>
+                                );
+                            },
+
+                            h2({ children }: { children: React.ReactNode }) {
+                                return (
+                                    <h2 className="mb-3 mt-6 text-lg font-semibold text-white">
+                                        {children}
+                                    </h2>
+                                );
+                            },
+
+                            h3({ children }: { children: React.ReactNode }) {
+                                return (
+                                    <h3 className="mb-2 mt-5 text-base font-semibold text-slate-200">
+                                        {children}
+                                    </h3>
+                                );
+                            },
+
+                            blockquote({ children }: { children: React.ReactNode }) {
+                                return (
+                                    <blockquote className="my-4 border-l-2 border-slate-600 pl-4 text-slate-400">
+                                        {children}
+                                    </blockquote>
+                                );
+                            },
+
+                            a({ children, href }: { children: React.ReactNode; href?: string }) {
+                                return (
+                                    <a
+                                        href={href}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-slate-200 underline decoration-slate-600 underline-offset-4 hover:decoration-slate-300"
+                                    >
+                                        {children}
+                                    </a>
+                                );
+                            },
+                        }}
+                    >
+                        {answerData.answer}
+                    </ReactMarkdown>
+                </div>
+
+                <div className="relative z-10 mt-8 border-t border-white/7 pt-6">
+                    <div className="mb-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
+                            <FileCode2 size={16} className="text-slate-400" />
+                            Sources
+                        </div>
+
+                        <span className="text-[11px] text-slate-600">
+                            Click a source to inspect code
+                        </span>
+                    </div>
+
+                    <div className="relative z-10 grid gap-3">
+                        {sources.map(
+                            (source: Source, index: number) => (
+                                <button
+                                    key={`${source.file}-${source.start_line}-${index}`}
+                                    onClick={() =>
+                                        onSelectSource(source)
+                                    }
+                                    className="relative z-10 group w-full rounded-xl border border-white/7 bg-black/15 p-4 text-left transition-all duration-300 hover:border-white/15 hover:bg-white/[0.03] hover:shadow-lg group-hover:shadow-xl"
+                                >
+                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                        <div className="flex min-w-0 items-center gap-2">
+                                            <FileCode2
+                                                size={14}
+                                                className="shrink-0 text-slate-600 group-hover:text-slate-400 transition-colors"
+                                            />
+
+                                            <span className="truncate font-mono text-xs text-slate-400 group-hover:text-slate-200 transition-colors">
+                                                {source.file}
+                                            </span>
+                                        </div>
+
+                                        <span className="rounded-md border border-white/7 bg-white/[0.03] px-2 py-1 font-mono text-[11px] text-slate-600">
+                                            L{source.start_line}-
+                                            {source.end_line}
+                                        </span>
+                                    </div>
+
+                                    {source.symbol && (
+                                        <div className="mt-2 font-mono text-[11px] text-slate-600">
+                                            {source.symbol}()
+                                        </div>
+                                    )}
+                                </button>
+                            )
+                        )}
+                    </div>
+                </div>
+
+                {answerData.is_streaming && (
+                    <div className="absolute inset-0 z-20 bg-black/50 pointer-events-none">
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="space-y-4">
+                                <div className="flex flex-col gap-2 w-80">
+                                    <SkeletonLine width="80%" height="20px" />
+                                    <SkeletonLine width="60%" height="20px" />
+                                    <SkeletonLine width="90%" height="20px" />
+                                    <SkeletonLine width="70%" height="20px" />
+                                    <SkeletonLine width="50%" height="20px" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </section>
+    );
+}
+
+export default AnswerPanel;

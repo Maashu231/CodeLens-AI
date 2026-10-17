@@ -6,6 +6,8 @@ import {
     Send,
 } from "lucide-react";
 
+import { SkeletonLine } from "./ui/Skeleton";
+
 
 const suggestedQuestions = [
     "Where is the FastAPI health endpoint?",
@@ -20,6 +22,16 @@ const suggestedBugQuestions = [
     "Why could GitHub requests be rejected?",
 ];
 
+
+function SkeletonLine({ width = "full", height = "16px" }) {
+    const widthClass = width === "full" ? "w-full" : `w-${width}`;
+    return (
+        <div
+            className={`rounded-full bg-white/10 animate-[shimmer_1.5s_ease-in_out_infinite] ${widthClass}`}
+            style={{ height }}
+        />
+    );
+}
 
 function AskCard({
     mode,
@@ -47,6 +59,8 @@ function AskCard({
 
     onQuestionKeyDown,
     onBugQuestionKeyDown,
+
+    showToast,
 }) {
     const isBugMode =
         mode === "bug";
@@ -65,19 +79,23 @@ function AskCard({
 
 
     return (
-        <section className="mt-5 rounded-2xl border border-white/9 bg-[#0d121b]/90 p-5 shadow-2xl shadow-black/20 sm:p-6">
+        <section className="relative overflow-hidden rounded-2xl border border-white/9 bg-[#0d121b]/80 p-5 shadow-2xl shadow-black/20 sm:p-6 glass-card-hover">
+
+            {/* Decorative accents */}
+            <div className="absolute top-4 right-4 h-8 w-8 rounded-full bg-pink-500/20 blur-sm" />
 
             {/* Header */}
-            <div className="flex flex-col gap-4">
+            <div className="relative z-10 flex flex-col gap-4">
 
                 <div className="flex items-center justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
                             {isBugMode ? (
-                                <Bug size={16} />
+                                <Bug size={16} className="text-red-400" />
                             ) : (
                                 <MessageSquareText
                                     size={16}
+                                    className="text-indigo-400"
                                 />
                             )}
 
@@ -95,25 +113,26 @@ function AskCard({
 
                     {isReady && (
                         <div className="hidden items-center gap-1.5 text-[11px] text-emerald-400 sm:flex">
-                            <CheckCircle2 size={13} />
-                            Indexed
+                            <CheckCircle2 size={13} className="shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
+                            Indexed & ready
                         </div>
                     )}
                 </div>
 
 
                 {/* Mode switch */}
-                <div className="inline-flex w-fit rounded-lg border border-white/7 bg-black/20 p-1">
+                <div className="inline-flex w-fit rounded-lg border border-white/7 bg-black/20 p-1 glass-card-hover">
 
                     <button
                         type="button"
                         onClick={() =>
                             onModeChange("ask")
                         }
-                        className={`rounded-md px-3 py-1.5 text-xs transition ${mode === "ask"
-                                ? "bg-white/[0.07] text-slate-200"
-                                : "text-slate-600 hover:text-slate-300"
-                            }`}
+                        className={`rounded-md px-3 py-1.5 text-xs transition-all duration-300 ${
+                            mode === "ask"
+                                ? "bg-white/[0.08] text-slate-200 shadow-sm shadow-white/5"
+                                : "text-slate-600 hover:text-slate-300 hover:bg-white/[0.04]"
+                        }`}
                     >
                         Ask Codebase
                     </button>
@@ -123,10 +142,11 @@ function AskCard({
                         onClick={() =>
                             onModeChange("bug")
                         }
-                        className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs transition ${mode === "bug"
-                                ? "bg-white/[0.07] text-slate-200"
-                                : "text-slate-600 hover:text-slate-300"
-                            }`}
+                        className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs transition-all duration-300 ${
+                            mode === "bug"
+                                ? "bg-white/[0.08] text-slate-200 shadow-sm shadow-white/5"
+                                : "text-slate-600 hover:text-slate-300 hover:bg-white/[0.04]"
+                        }`}
                     >
                         <Bug size={12} />
                         Investigate Bug
@@ -136,7 +156,7 @@ function AskCard({
 
 
             {/* Input */}
-            <div className="mt-5">
+            <div className="relative z-10 mt-5">
 
                 <textarea
                     value={activeQuestion}
@@ -177,7 +197,7 @@ function AskCard({
                                 : "Analyze a repository first..."
                     }
                     rows={5}
-                    className="w-full resize-none rounded-xl border border-white/9 bg-black/20 p-4 text-sm leading-6 text-slate-200 placeholder:text-slate-700 outline-none transition focus:border-white/20 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="w-full resize-none rounded-xl border border-white/9 bg-black/20 p-4 text-sm leading-6 text-slate-200 placeholder:text-slate-700 outline-none transition-all duration-300 input-enhanced disabled:cursor-not-allowed disabled:opacity-60"
                 />
 
 
@@ -202,7 +222,11 @@ function AskCard({
                             isAsking ||
                             isInvestigating
                         }
-                        className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-semibold text-slate-950 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-40"
+                        className={`inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-semibold text-slate-950 shadow-lg shadow-black/20 transition-all duration-300 ${
+                            (!isReady || isAsking || isInvestigating)
+                                ? "pointer-events-none opacity-50"
+                                : "hover:bg-slate-200 hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.98]"
+                        }`}
                     >
                         {isBugMode ? (
                             isInvestigating ? (
@@ -215,7 +239,7 @@ function AskCard({
                                 </>
                             ) : (
                                 <>
-                                    <Bug size={16} />
+                                    <Bug size={16} className="text-red-400" />
                                     Investigate Bug
                                 </>
                             )
@@ -243,7 +267,7 @@ function AskCard({
 
             {/* Suggested questions */}
             {!hasAnswer && (
-                <div className="mt-5">
+                <div className="relative z-10 mt-5">
 
                     <div className="mb-2 text-[11px] font-medium uppercase tracking-[0.14em] text-slate-700">
                         Try asking
@@ -267,7 +291,11 @@ function AskCard({
                                         )
                                 }
                                 disabled={!isReady}
-                                className="rounded-lg border border-white/7 bg-white/[0.02] px-3 py-2 text-left text-xs text-slate-500 transition hover:border-white/12 hover:text-slate-300 disabled:cursor-not-allowed disabled:opacity-40"
+                                className={`rounded-lg border border-white/7 bg-white/[0.02] px-3 py-2 text-left text-xs text-slate-500 transition-all duration-300 ${
+                                    isReady
+                                        ? "hover:border-white/12 hover:text-slate-300 hover:bg-white/[0.04]"
+                                        : "cursor-not-allowed disabled:opacity-40"
+                                }`}
                             >
                                 {item}
                             </button>
@@ -276,6 +304,24 @@ function AskCard({
                     </div>
                 </div>
             )}
+
+            {/* Skeleton state when loading */}
+            {isAsking || isInvestigating ? (
+                <div className="relative z-10 mt-5 pt-4 border-t border-white/6">
+                    <div className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-2">
+                            <SkeletonLine width="60%" height="20px" mb="8px" />
+                            <SkeletonLine width="90%" height="20px" mb="8px" />
+                            <SkeletonLine width="45%" height="20px" mb="8px" />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <SkeletonLine width="70%" height="16px" mb="4px" />
+                            <SkeletonLine width="30%" height="16px" mb="4px" />
+                            <SkeletonLine width="85%" height="16px" mb="4px" />
+                        </div>
+                    </div>
+                </div>
+            ) : null}
 
         </section>
     );

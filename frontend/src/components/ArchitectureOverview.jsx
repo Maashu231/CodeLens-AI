@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import { getRepositoryOverview } from "../services/api";
+import { SkeletonText, SkeletonBlock } from "./ui/Skeleton";
 
 function formatSize(bytes) {
     if (bytes < 1024) {
@@ -42,6 +43,7 @@ function languageLabel(language) {
 function ArchitectureOverview({
     repositoryUrl,
     isReady,
+    showToast,
 }) {
     const [overview, setOverview] =
         useState(null);
@@ -112,10 +114,13 @@ function ArchitectureOverview({
     }
 
     return (
-        <section className="mt-5 overflow-hidden rounded-2xl border border-white/9 bg-[#0d121b]/90 shadow-2xl shadow-black/20">
-            <div className="border-b border-white/8 px-5 py-4 sm:px-6">
+        <section className="relative z-10 overflow-hidden rounded-2xl border border-white/9 bg-[#0d121b]/80 shadow-2xl shadow-black/20 glass-card">
+            {/* Decorative accent */}
+            <div className="absolute top-4 right-4 h-8 w-8 rounded-full bg-indigo-500/20 blur-sm" />
+
+            <div className="relative z-10 border-b border-white/8 px-5 py-4 sm:px-6">
                 <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
-                    <BarChart3 size={16} />
+                    <BarChart3 size={16} className="text-indigo-400" />
                     Architecture Overview
                 </div>
 
@@ -125,7 +130,7 @@ function ArchitectureOverview({
             </div>
 
             {isLoading ? (
-                <div className="flex items-center justify-center gap-2 py-16 text-sm text-slate-600">
+                <div className="relative z-10 flex items-center justify-center gap-2 py-16 text-sm text-slate-600">
                     <Loader2
                         size={17}
                         className="animate-spin"
@@ -134,15 +139,15 @@ function ArchitectureOverview({
                     Building repository overview...
                 </div>
             ) : error ? (
-                <div className="p-5 text-sm text-red-300">
+                <div className="relative z-10 p-5 text-sm text-rose-300">
                     {error}
                 </div>
             ) : overview ? (
-                <div className="space-y-6 p-5 sm:p-6">
+                <div className="relative z-10 space-y-6 p-5 sm:p-6">
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                        <div className="rounded-xl border border-white/7 bg-white/[0.02] p-4">
+                        <div className="rounded-xl border border-white/7 bg-black/20 p-4 glass-card-hover">
                             <div className="flex items-center gap-2 text-slate-600">
-                                <FileCode2 size={15} />
+                                <FileCode2 size={15} className="text-slate-400" />
                                 <span className="text-[11px] uppercase tracking-wider">
                                     Files
                                 </span>
@@ -153,9 +158,9 @@ function ArchitectureOverview({
                             </div>
                         </div>
 
-                        <div className="rounded-xl border border-white/7 bg-white/[0.02] p-4">
+                        <div className="rounded-xl border border-white/7 bg-black/20 p-4 glass-card-hover">
                             <div className="flex items-center gap-2 text-slate-600">
-                                <Box size={15} />
+                                <Box size={15} className="text-slate-400" />
                                 <span className="text-[11px] uppercase tracking-wider">
                                     Chunks
                                 </span>
@@ -166,9 +171,9 @@ function ArchitectureOverview({
                             </div>
                         </div>
 
-                        <div className="rounded-xl border border-white/7 bg-white/[0.02] p-4">
+                        <div className="rounded-xl border border-white/7 bg-black/20 p-4 glass-card-hover">
                             <div className="flex items-center gap-2 text-slate-600">
-                                <FunctionSquare size={15} />
+                                <FunctionSquare size={15} className="text-slate-400" />
                                 <span className="text-[11px] uppercase tracking-wider">
                                     Functions
                                 </span>
@@ -179,9 +184,9 @@ function ArchitectureOverview({
                             </div>
                         </div>
 
-                        <div className="rounded-xl border border-white/7 bg-white/[0.02] p-4">
+                        <div className="rounded-xl border border-white/7 bg-black/20 p-4 glass-card-hover">
                             <div className="flex items-center gap-2 text-slate-600">
-                                <FolderTree size={15} />
+                                <FolderTree size={15} className="text-slate-400" />
                                 <span className="text-[11px] uppercase tracking-wider">
                                     Symbols
                                 </span>
@@ -193,8 +198,8 @@ function ArchitectureOverview({
                         </div>
                     </div>
 
-                    <div className="grid gap-5 lg:grid-cols-2">
-                        <div className="rounded-xl border border-white/7 bg-black/10 p-4">
+                    <div className="relative z-10 grid gap-5 lg:grid-cols-2">
+                        <div className="rounded-xl border border-white/7 bg-black/20 p-4 glass-card-hover">
                             <div className="mb-4 text-xs font-medium text-slate-400">
                                 Languages
                             </div>
@@ -217,7 +222,7 @@ function ArchitectureOverview({
 
                                             <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.05]">
                                                 <div
-                                                    className="h-full rounded-full bg-white/40"
+                                                    className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-indigo-400"
                                                     style={{
                                                         width: `${Math.max(
                                                             6,
@@ -234,7 +239,7 @@ function ArchitectureOverview({
                             </div>
                         </div>
 
-                        <div className="rounded-xl border border-white/7 bg-black/10 p-4">
+                        <div className="rounded-xl border border-white/7 bg-black/20 p-4 glass-card-hover">
                             <div className="mb-4 text-xs font-medium text-slate-400">
                                 Top-level modules
                             </div>
@@ -267,7 +272,7 @@ function ArchitectureOverview({
                         </div>
                     </div>
 
-                    <div className="rounded-xl border border-white/7 bg-black/10 p-4">
+                    <div className="relative z-10 rounded-xl border border-white/7 bg-black/20 p-4 glass-card-hover">
                         <div className="mb-4 flex items-center justify-between">
                             <div className="text-xs font-medium text-slate-400">
                                 Largest files

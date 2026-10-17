@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import {
     CalendarDays,
     Copy,
@@ -16,10 +18,36 @@ import {
     getRepositoryImpact,
 } from "../services/api";
 
+import { SkeletonText } from "./ui/Skeleton";
+
+function getLanguageFromPath(path) {
+    const extension = path.split(".").pop()?.toLowerCase();
+
+    const languages = {
+        py: "python",
+        js: "javascript",
+        jsx: "jsx",
+        ts: "typescript",
+        tsx: "tsx",
+        java: "java",
+        sql: "sql",
+        html: "html",
+        css: "css",
+        md: "markdown",
+        json: "json",
+        yml: "yaml",
+        yaml: "yaml",
+        tsconfig: "json",
+    };
+
+    return languages[extension] || "text";
+}
+
 function CodeViewerModal({
     source,
     repositoryUrl,
     onClose,
+    showToast,
 }) {
     const [copied, setCopied] = useState(false);
 
@@ -36,8 +64,7 @@ function CodeViewerModal({
     const [showImpact, setShowImpact] =
         useState(false);
 
-    const [impactData, setImpactData] =
-        useState(null);
+    const [impactData, setImpactData] = useState(null);
 
     const [isLoadingImpact, setIsLoadingImpact] =
         useState(false);
@@ -49,6 +76,11 @@ function CodeViewerModal({
         return null;
     }
 
+    const language = useMemo(
+        () => getLanguageFromPath(source.file),
+        [source.file]
+    );
+
     async function handleCopy() {
         const text =
             `${source.file}:${source.start_line}-${source.end_line}`;
@@ -57,6 +89,9 @@ function CodeViewerModal({
             await navigator.clipboard.writeText(text);
 
             setCopied(true);
+            if (showToast) {
+                showToast("success", "Location copied to clipboard");
+            }
 
             setTimeout(() => {
                 setCopied(false);
@@ -180,8 +215,8 @@ function CodeViewerModal({
                     <div className="flex items-center gap-2">
                         <button
                             onClick={handleImpact}
-                            className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition ${showImpact
-                                ? "border-white/15 bg-white/[0.06] text-slate-200"
+                            className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-all duration-300 ${showImpact
+                                ? "border-white/15 bg-white/[0.06] text-slate-200 shadow-[0_0_8px_rgba(16,185,129,0.2)]"
                                 : "border-white/8 bg-white/[0.03] text-slate-500 hover:text-slate-200"
                                 }`}
                         >
@@ -191,8 +226,8 @@ function CodeViewerModal({
 
                         <button
                             onClick={handleHistory}
-                            className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition ${showHistory
-                                ? "border-white/15 bg-white/[0.06] text-slate-200"
+                            className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs transition-all duration-300 ${showHistory
+                                ? "border-white/15 bg-white/[0.06] text-slate-200 shadow-[0_0_8px_rgba(99,102,241,0.2)]"
                                 : "border-white/8 bg-white/[0.03] text-slate-500 hover:text-slate-200"
                                 }`}
                         >
@@ -202,7 +237,7 @@ function CodeViewerModal({
 
                         <button
                             onClick={handleCopy}
-                            className="inline-flex items-center gap-2 rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2 text-xs text-slate-500 transition hover:text-slate-200"
+                            className="inline-flex items-center gap-2 rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2 text-xs text-slate-500 transition-all hover:text-slate-200"
                         >
                             <Copy size={14} />
 
@@ -213,7 +248,7 @@ function CodeViewerModal({
 
                         <button
                             onClick={handleClose}
-                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/8 bg-white/[0.03] text-slate-500 transition hover:text-white"
+                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/8 bg-white/[0.03] text-slate-500 transition-all hover:text-white hover:bg-white/[0.06]"
                             aria-label="Close code viewer"
                         >
                             <X size={16} />
@@ -277,7 +312,7 @@ function CodeViewerModal({
                                     Analyzing dependencies...
                                 </div>
                             ) : impactError ? (
-                                <div className="px-3 py-6 text-center text-xs text-red-300">
+                                <div className="px-3 py-6 text-center text-xs text-rose-300">
                                     {impactError}
                                 </div>
                             ) : !impactData ||
@@ -392,7 +427,7 @@ function CodeViewerModal({
                                     Loading history...
                                 </div>
                             ) : historyError ? (
-                                <div className="px-3 py-6 text-center text-xs text-red-300">
+                                <div className="px-3 py-6 text-center text-xs text-rose-300">
                                     {historyError}
                                 </div>
                             ) : history.length === 0 ? (
@@ -407,7 +442,7 @@ function CodeViewerModal({
                                                 key={
                                                     commit.sha
                                                 }
-                                                className="rounded-lg px-3 py-3 transition hover:bg-white/[0.03]"
+                                                className="rounded-lg px-3 py-3 transition-all duration-300 hover:bg-white/[0.03]"
                                             >
                                                 <div className="flex items-start gap-3">
                                                     <div className="mt-0.5 rounded-md border border-white/7 bg-white/[0.03] p-1.5 text-slate-600">
@@ -461,7 +496,7 @@ function CodeViewerModal({
                                                             }
                                                             target="_blank"
                                                             rel="noreferrer"
-                                                            className="shrink-0 rounded-md border border-white/7 bg-white/[0.02] p-2 text-slate-700 transition hover:text-slate-300"
+                                                            className="shrink-0 rounded-md border border-white/7 bg-white/[0.02] p-2 text-slate-700 transition-all hover:text-slate-300"
                                                             aria-label="Open commit on GitHub"
                                                         >
                                                             <ExternalLink
@@ -485,52 +520,21 @@ function CodeViewerModal({
                 <div className="min-h-0 flex-1 overflow-auto bg-[#070a10]">
                     <div className="min-w-max p-4">
                         {source.content ? (
-                            source.content
-                                .split("\n")
-                                .map(
-                                    (
-                                        line,
-                                        index
-                                    ) => {
-                                        const lineNumber =
-                                            source.start_line +
-                                            index;
-
-                                        const isHighlighted =
-                                            lineNumber >=
-                                            source.start_line &&
-                                            lineNumber <=
-                                            source.end_line;
-
-                                        return (
-                                            <div
-                                                key={`${lineNumber}-${index}`}
-                                                className="grid grid-cols-[64px_1fr] rounded-sm font-mono text-[13px] leading-7"
-                                            >
-                                                <div
-                                                    className={`select-none border-r border-white/5 pr-4 text-right ${isHighlighted
-                                                        ? "text-slate-500"
-                                                        : "text-slate-700"
-                                                        }`}
-                                                >
-                                                    {
-                                                        lineNumber
-                                                    }
-                                                </div>
-
-                                                <div
-                                                    className={`pl-4 ${isHighlighted
-                                                        ? "bg-white/[0.035] text-slate-300"
-                                                        : "text-slate-600"
-                                                        }`}
-                                                >
-                                                    {line ||
-                                                        " "}
-                                                </div>
-                                            </div>
-                                        );
-                                    }
-                                )
+                            <SyntaxHighlighter
+                                language={language}
+                                style={vscDarkPlus}
+                                showLineNumbers={false}
+                                customStyle={{
+                                    margin: 0,
+                                    padding: 0,
+                                    border: "none",
+                                }}
+                                codeTagProps={{
+                                    className: "block overflow-x-auto",
+                                }}
+                            >
+                                {source.content}
+                            </SyntaxHighlighter>
                         ) : (
                             <div className="p-10 text-center text-sm text-slate-600">
                                 Source content is not available.
@@ -547,7 +551,7 @@ function CodeViewerModal({
 
                     <button
                         onClick={handleClose}
-                        className="rounded-lg bg-white px-4 py-2 text-xs font-semibold text-slate-950 hover:bg-slate-200"
+                        className="rounded-lg bg-white px-4 py-2 text-xs font-semibold text-slate-950 shadow-lg transition-all hover:bg-slate-200 hover:shadow-xl active:scale-[0.98]"
                     >
                         Close
                     </button>

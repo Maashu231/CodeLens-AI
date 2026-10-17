@@ -11,6 +11,7 @@ import {
     getRepositoryFile,
     getRepositoryTree,
 } from "../services/api";
+import { SkeletonText } from "./ui/Skeleton";
 
 function getLanguage(path) {
     const extension =
@@ -100,15 +101,15 @@ function TreeFolder({
             open
             className="group"
         >
-            <summary className="flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-xs text-slate-500 transition hover:bg-white/[0.03] hover:text-slate-300">
+            <summary className="flex cursor-pointer list-none items-center gap-2 rounded-lg px-3 py-2 text-xs text-slate-500 transition-all duration-300 hover:bg-white/[0.03] hover:text-slate-300 group-hover:shadow-sm">
                 <ChevronRight
                     size={13}
-                    className="transition-transform group-open:rotate-90"
+                    className="transition-transform duration-300 group-open:rotate-90"
                 />
 
                 <Folder
                     size={15}
-                    className="text-slate-600"
+                    className="text-slate-600 transition-colors group-hover:text-slate-400"
                 />
 
                 <span className="font-medium">
@@ -140,14 +141,14 @@ function TreeFolder({
                         onClick={() =>
                             onOpenFile(file)
                         }
-                        className="group/file flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition hover:bg-white/[0.035]"
+                        className="relative z-10 group/file flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-all duration-300 hover:bg-white/[0.035] hover:shadow-md group-hover:shadow-lg"
                     >
                         <FileCode2
                             size={14}
-                            className="shrink-0 text-slate-600 group-hover/file:text-slate-400"
+                            className="shrink-0 text-slate-600 group-hover/text-slate-400 transition-colors"
                         />
 
-                        <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-slate-500 group-hover/file:text-slate-200">
+                        <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-slate-500 group-hover/text-slate-200 transition-colors">
                             {file.name}
                         </span>
 
@@ -169,6 +170,7 @@ function RepositoryExplorer({
     repositoryUrl,
     isReady,
     onOpenSource,
+    showToast,
 }) {
     const [files, setFiles] = useState([]);
     const [search, setSearch] = useState("");
@@ -281,8 +283,11 @@ function RepositoryExplorer({
     }
 
     return (
-        <section className="mt-5 overflow-hidden rounded-2xl border border-white/9 bg-[#0d121b]/90 shadow-2xl shadow-black/20">
-            <div className="border-b border-white/8 px-5 py-4 sm:px-6">
+        <section className="relative z-10 overflow-hidden rounded-2xl border border-white/9 bg-[#0d121b]/80 shadow-2xl shadow-black/20 glass-card">
+            {/* Decorative accent */}
+            <div className="absolute top-4 right-4 h-8 w-8 rounded-full bg-emerald-500/20 blur-sm" />
+
+            <div className="relative z-10 border-b border-white/8 px-5 py-4 sm:px-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
@@ -302,7 +307,7 @@ function RepositoryExplorer({
 
                         {search && (
                             <>
-                                <span>•</span>
+                                <span className="mx-1">•</span>
                                 <span>
                                     {visibleFiles.length} matching
                                 </span>
@@ -325,104 +330,104 @@ function RepositoryExplorer({
                             )
                         }
                         placeholder="Search files..."
-                        className="h-10 w-full rounded-lg border border-white/7 bg-black/20 pl-10 pr-3 text-xs text-slate-300 placeholder:text-slate-700 outline-none transition focus:border-white/15"
+                        className="input-enhanced"
                     />
                 </div>
-            </div>
 
-            {error && (
-                <div className="border-b border-red-400/10 bg-red-400/[0.03] px-5 py-3 text-xs text-red-300">
-                    {error}
-                </div>
-            )}
-
-            <div className="max-h-[520px] overflow-auto p-3">
-                {isLoading ? (
-                    <div className="flex items-center justify-center gap-2 py-14 text-sm text-slate-600">
-                        <Loader2
-                            size={16}
-                            className="animate-spin"
-                        />
-
-                        Loading repository files...
-                    </div>
-                ) : visibleFiles.length === 0 ? (
-                    <div className="py-14 text-center text-sm text-slate-600">
-                        No matching files found.
-                    </div>
-                ) : (
-                    <div className="space-y-1">
-                        {Object.entries(
-                            tree.folders
-                        )
-                            .sort(([a], [b]) =>
-                                a.localeCompare(b)
-                            )
-                            .map(
-                                ([
-                                    folderName,
-                                    folderNode,
-                                ]) => (
-                                    <TreeFolder
-                                        key={folderName}
-                                        name={folderName}
-                                        node={folderNode}
-                                        depth={0}
-                                        onOpenFile={
-                                            handleOpenFile
-                                        }
-                                    />
-                                )
-                            )}
-
-                        {tree.files
-                            .sort((a, b) =>
-                                a.name.localeCompare(
-                                    b.name
-                                )
-                            )
-                            .map((file) => (
-                                <button
-                                    key={file.path}
-                                    onClick={() =>
-                                        handleOpenFile(
-                                            file
-                                        )
-                                    }
-                                    className="group/file flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition hover:bg-white/[0.035]"
-                                >
-                                    {loadingFile ===
-                                        file.path ? (
-                                        <Loader2
-                                            size={14}
-                                            className="shrink-0 animate-spin text-slate-500"
-                                        />
-                                    ) : (
-                                        <FileCode2
-                                            size={14}
-                                            className="shrink-0 text-slate-600 group-hover/file:text-slate-400"
-                                        />
-                                    )}
-
-                                    <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-slate-500 group-hover/file:text-slate-200">
-                                        {file.name}
-                                    </span>
-
-                                    <span className="hidden rounded border border-white/6 bg-white/[0.02] px-1.5 py-0.5 text-[9px] font-medium text-slate-700 sm:inline">
-                                        {getLanguage(
-                                            file.path
-                                        )}
-                                    </span>
-
-                                    <span className="hidden w-16 text-right text-[10px] text-slate-700 md:inline">
-                                        {formatSize(
-                                            file.size
-                                        )}
-                                    </span>
-                                </button>
-                            ))}
+                {error && (
+                    <div className="mt-3 border-b border-rose-500/20 bg-rose-950/20 px-5 py-3 text-xs text-rose-300">
+                        {error}
                     </div>
                 )}
+
+                <div className="relative z-10 max-h-[520px] overflow-auto p-3">
+                    {isLoading ? (
+                        <div className="flex items-center justify-center gap-2 py-14 text-sm text-slate-600">
+                            <Loader2
+                                size={16}
+                                className="animate-spin"
+                            />
+
+                            Loading repository files...
+                        </div>
+                    ) : visibleFiles.length === 0 ? (
+                        <div className="py-14 text-center text-sm text-slate-600">
+                            No matching files found.
+                        </div>
+                    ) : (
+                        <div className="space-y-1">
+                            {Object.entries(
+                                tree.folders
+                            )
+                                .sort(([a], [b]) =>
+                                    a.localeCompare(b)
+                                )
+                                .map(
+                                    ([
+                                        folderName,
+                                        folderNode,
+                                    ]) => (
+                                        <TreeFolder
+                                            key={folderName}
+                                            name={folderName}
+                                            node={folderNode}
+                                            depth={0}
+                                            onOpenFile={
+                                                handleOpenFile
+                                            }
+                                        />
+                                    )
+                                )}
+
+                            {tree.files
+                                .sort((a, b) =>
+                                    a.name.localeCompare(
+                                        b.name
+                                    )
+                                )
+                                .map((file) => (
+                                    <button
+                                        key={file.path}
+                                        onClick={() =>
+                                            handleOpenFile(
+                                                file
+                                            )
+                                        }
+                                        className="relative z-10 group/file flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-all duration-300 hover:bg-white/[0.035] hover:shadow-md group-hover:shadow-lg"
+                                    >
+                                        {loadingFile ===
+                                            file.path ? (
+                                            <Loader2
+                                                size={14}
+                                                className="shrink-0 animate-spin text-slate-500"
+                                            />
+                                        ) : (
+                                            <FileCode2
+                                                size={14}
+                                                className="shrink-0 text-slate-600 group-hover/text-slate-400 transition-colors"
+                                            />
+                                        )}
+
+                                        <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-slate-500 group-hover/text-slate-200 transition-colors">
+                                            {file.name}
+                                        </span>
+
+                                        <span className="hidden rounded border border-white/6 bg-white/[0.02] px-1.5 py-0.5 text-[9px] font-medium text-slate-700 sm:inline">
+                                            {getLanguage(
+                                                file.path
+                                            )}
+                                        </span>
+
+                                        <span className="hidden w-16 text-right text-[10px] text-slate-700 md:inline">
+                                            {formatSize(
+                                                file.size
+                                            )}
+                                        </span>
+                                    </button>
+                                ))}
+                        </div>
+                    )}
+                </div>
             </div>
         </section>
     );

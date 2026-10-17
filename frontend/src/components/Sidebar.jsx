@@ -26,14 +26,17 @@ function Sidebar({
     ];
 
     return (
-        <aside className="hidden w-72 shrink-0 border-r border-white/8 bg-[#0b0f17]/85 p-5 backdrop-blur-xl lg:flex lg:flex-col">
-            <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-950 shadow-lg shadow-white/5">
-                    <TerminalSquare size={21} />
+        <aside className="hidden z-10 w-72 shrink-0 border-r border-white/8 bg-white/[0.02] p-5 backdrop-blur-xl lg:flex lg:flex-col relative overflow-y-auto">
+            {/* Decorative glow */}
+            <div className="absolute top-6 right-6 h-16 w-16 rounded-full bg-indigo-500/[0.12] blur-2xl pointer-events-none" />
+
+            <div className="flex items-center gap-3 mb-1">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-pink-500 shadow-lg shadow-indigo-500/30">
+                    <TerminalSquare size={21} className="text-slate-950" />
                 </div>
 
-                <div>
-                    <div className="text-sm font-semibold tracking-tight">
+                <div className="flex flex-col">
+                    <div className="text-sm font-semibold tracking-tight text-white">
                         CodeLens AI
                     </div>
 
@@ -43,12 +46,12 @@ function Sidebar({
                 </div>
             </div>
 
-            <div className="mt-8">
+            <div className="mt-10">
                 <div className="mb-3 px-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-600">
                     Workspace
                 </div>
 
-                <div className="rounded-xl border border-white/8 bg-white/[0.03] p-3">
+                <div className="rounded-xl border border-white/8 bg-black/20 p-3 glass-card-hover">
                     <div className="flex items-start gap-3">
                         <div className="mt-0.5 text-slate-500">
                             <GitBranch size={16} />
@@ -61,10 +64,11 @@ function Sidebar({
 
                             <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
                                 <span
-                                    className={`h-1.5 w-1.5 rounded-full ${isReady
-                                        ? "bg-emerald-400"
-                                        : "bg-slate-600"
-                                        }`}
+                                    className={`h-1.5 w-1.5 rounded-full transition-all ${
+                                        isReady
+                                            ? "bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.6)]"
+                                            : "bg-slate-600"
+                                    }`}
                                 />
 
                                 {isReady ? "Indexed" : "Not indexed"}
@@ -80,7 +84,7 @@ function Sidebar({
                 </div>
             </div>
 
-            <div className="mt-8">
+            <div className="mt-10">
                 <div className="mb-3 px-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-600">
                     Capabilities
                 </div>
@@ -89,25 +93,34 @@ function Sidebar({
                     {capabilities.map(([label, Icon]) => (
                         <div
                             key={label}
-                            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-500"
+                            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-500 glass-card-hover"
                         >
-                            <Icon size={15} />
-                            <span>{label}</span>
+                            <Icon size={15} className="text-slate-400 group-hover:text-indigo-400 transition-colors" />
+                            <span className="group-hover:text-slate-200 transition-colors">{label}</span>
                         </div>
                     ))}
                 </div>
             </div>
 
-            <div className="mt-auto rounded-xl border border-white/7 bg-white/[0.02] p-4">
+            <div className="mt-auto pt-8 rounded-xl border border-white/7 bg-black/20 p-4 glass-card-hover">
                 <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
-                    <TerminalSquare size={14} />
+                    <TerminalSquare size={14} className="text-slate-600" />
                     RAG pipeline
                 </div>
 
                 <div className="mt-3 space-y-2 text-[11px] text-slate-600">
-                    <div>GitHub → Parser → Chunks</div>
-                    <div>Embeddings → Qdrant → Reranker</div>
-                    <div>Evidence → LLM → Answer</div>
+                    <div className="flex items-center gap-1 text-slate-500">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                        GitHub → Parser → Chunks
+                    </div>
+                    <div className="flex items-center gap-1 text-slate-500">
+                        <span className="w-2 h-2 rounded-full bg-indigo-400" />
+                        Embeddings → Qdrant → Reranker
+                    </div>
+                    <div className="flex items-center gap-1 text-slate-500">
+                        <span className="w-2 h-2 rounded-full bg-pink-500" />
+                        Evidence → LLM → Answer
+                    </div>
                 </div>
             </div>
         </aside>

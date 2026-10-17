@@ -5,9 +5,12 @@ import {
     FileCode2,
 } from "lucide-react";
 
+import { SkeletonLine } from "./ui/Skeleton";
+
 function AnswerPanel({
     answerData,
     onSelectSource,
+    showToast,
 }) {
     if (!answerData) {
         return null;
@@ -18,20 +21,23 @@ function AnswerPanel({
         : [];
 
     return (
-        <section className="mt-5 overflow-hidden rounded-2xl border border-white/9 bg-[#0d121b]/90 shadow-2xl shadow-black/20">
-            <div className="border-b border-white/8 px-5 py-4 sm:px-6">
+        <section className="relative overflow-hidden rounded-2xl border border-white/9 bg-[#0d121b]/80 shadow-2xl shadow-black/20 glass-card">
+            {/* Decorative accent */}
+            <div className="absolute top-4 right-4 h-8 w-8 rounded-full bg-indigo-500/20 blur-sm" />
+
+            <div className="relative z-10 border-b border-white/8 px-5 py-4 sm:px-6">
                 <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
-                    <Bot size={16} />
+                    <Bot size={16} className="text-indigo-400" />
                     CodeLens Answer
                     {answerData.isStreaming && (
-                        <span className="ml-2 text-xs text-slate-500">
+                        <span className="ml-2 text-xs text-slate-500 animate-pulse">
                             Generating...
                         </span>
                     )}
                 </div>
             </div>
 
-            <div className="p-5 sm:p-6">
+            <div className="relative z-10 p-5 sm:p-6">
                 <div className="prose prose-invert max-w-none text-sm leading-7 text-slate-300">
                     <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
@@ -134,10 +140,10 @@ function AnswerPanel({
                     </ReactMarkdown>
                 </div>
 
-                <div className="mt-8 border-t border-white/7 pt-6">
+                <div className="relative z-10 mt-8 border-t border-white/7 pt-6">
                     <div className="mb-3 flex items-center justify-between">
                         <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
-                            <FileCode2 size={16} />
+                            <FileCode2 size={16} className="text-slate-400" />
                             Sources
                         </div>
 
@@ -146,7 +152,7 @@ function AnswerPanel({
                         </span>
                     </div>
 
-                    <div className="grid gap-3">
+                    <div className="relative z-10 grid gap-3">
                         {sources.map(
                             (source, index) => (
                                 <button
@@ -154,16 +160,16 @@ function AnswerPanel({
                                     onClick={() =>
                                         onSelectSource(source)
                                     }
-                                    className="group w-full rounded-xl border border-white/7 bg-black/15 p-4 text-left transition hover:border-white/15 hover:bg-white/[0.03]"
+                                    className="relative z-10 group w-full rounded-xl border border-white/7 bg-black/15 p-4 text-left transition-all duration-300 hover:border-white/15 hover:bg-white/[0.03] hover:shadow-lg group-hover:shadow-xl"
                                 >
                                     <div className="flex flex-wrap items-center justify-between gap-2">
                                         <div className="flex min-w-0 items-center gap-2">
                                             <FileCode2
                                                 size={14}
-                                                className="shrink-0 text-slate-600 group-hover:text-slate-400"
+                                                className="shrink-0 text-slate-600 group-hover:text-slate-400 transition-colors"
                                             />
 
-                                            <span className="truncate font-mono text-xs text-slate-400 group-hover:text-slate-200">
+                                            <span className="truncate font-mono text-xs text-slate-400 group-hover:text-slate-200 transition-colors">
                                                 {source.file}
                                             </span>
                                         </div>
@@ -185,6 +191,23 @@ function AnswerPanel({
                     </div>
                 </div>
             </div>
+
+            {/* Skeleton state when loading */}
+            {answerData.isStreaming && (
+                <div className="absolute inset-0 z-20 bg-black/50 pointer-events-none">
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="space-y-4">
+                            <div className="flex flex-col gap-2 w-80">
+                                <SkeletonLine width="80%" height="20px" />
+                                <SkeletonLine width="60%" height="20px" />
+                                <SkeletonLine width="90%" height="20px" />
+                                <SkeletonLine width="70%" height="20px" />
+                                <SkeletonLine width="50%" height="20px" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </section>
     );
 }

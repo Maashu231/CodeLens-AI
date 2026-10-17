@@ -10,9 +10,9 @@ function Header({
     const isBackendChecking = backendStatus === "checking";
 
     return (
-        <header className="flex items-center justify-between border-b border-white/8 px-5 py-4 sm:px-8">
+        <header className="relative z-20 flex items-center justify-between border-b border-white/8 bg-white/[0.03] backdrop-blur-xl px-5 py-4 sm:px-8 shadow-sm">
             <div className="flex items-center gap-2 text-sm text-slate-400">
-                <span className="font-semibold text-slate-200 lg:hidden">
+                <span className="font-semibold text-slate-200 tracking-tight lg:hidden">
                     CodeLens AI
                 </span>
 
@@ -21,7 +21,7 @@ function Header({
                     className="text-slate-700 lg:hidden"
                 />
 
-                <span className="hidden sm:inline">
+                <span className="hidden sm:inline font-medium text-slate-200">
                     Workspace
                 </span>
             </div>
@@ -37,19 +37,19 @@ function Header({
                             ? "Checking backend connection..."
                             : "Backend offline or unreachable. Click to retry."
                     }
-                    className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors ${
+                    className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-all duration-300 ${
                         isBackendOnline
-                            ? "border-emerald-400/15 bg-emerald-400/6 text-emerald-300 hover:bg-emerald-400/10"
+                            ? "border-emerald-400/20 bg-emerald-400/[0.10] text-emerald-300 hover:bg-emerald-400/[0.15] hover:border-emerald-400/30"
                             : isBackendChecking
-                            ? "border-amber-400/15 bg-amber-400/6 text-amber-300 hover:bg-amber-400/10"
-                            : "border-rose-400/20 bg-rose-400/10 text-rose-300 hover:bg-rose-400/15"
+                            ? "border-amber-400/20 bg-amber-400/[0.10] text-amber-300 hover:bg-amber-400/[0.15] hover:border-amber-400/30"
+                            : "border-rose-400/20 bg-rose-400/[0.10] text-rose-300 hover:bg-rose-400/[0.15] hover:border-rose-400/30"
                     }`}
                 >
-                    <Server size={12} className="opacity-70" />
+                    <Server size={12} className="opacity-80" />
                     <span
-                        className={`h-1.5 w-1.5 rounded-full ${
+                        className={`h-1.5 w-1.5 rounded-full transition-all duration-300 ${
                             isBackendOnline
-                                ? "bg-emerald-400"
+                                ? "bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.6)]"
                                 : isBackendChecking
                                 ? "bg-amber-400 animate-pulse"
                                 : "bg-rose-400"
@@ -65,17 +65,17 @@ function Header({
                 </button>
 
                 <div
-                    className={`flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${
+                    className={`flex items-center gap-2 rounded-full border px-3 py-1 text-xs transition-all duration-300 ${
                         isReady
-                            ? "border-emerald-400/15 bg-emerald-400/6 text-emerald-300"
+                            ? "border-emerald-400/20 bg-emerald-400/[0.10] text-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.2)]"
                             : "border-white/8 bg-white/[0.03] text-slate-500"
                     }`}
                 >
                     <span
-                        className={`h-1.5 w-1.5 rounded-full ${
+                        className={`h-1.5 w-1.5 rounded-full transition-all duration-300 ${
                             isReady
-                                ? "bg-emerald-400"
-                                : "bg-slate-600"
+                                ? "bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.6)]"
+                                : "bg-slate-500"
                         }`}
                     />
 

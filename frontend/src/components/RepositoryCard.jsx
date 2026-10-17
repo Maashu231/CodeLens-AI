@@ -15,6 +15,7 @@ function RepositoryCard({
     isReady,
     progress,
     statusMessage,
+    showToast,
 }) {
     function handleKeyDown(event) {
         if (event.key === "Enter") {
@@ -23,18 +24,20 @@ function RepositoryCard({
     }
 
     return (
-        <section className="rounded-2xl border border-white/9 bg-[#0d121b]/90 p-5 shadow-2xl shadow-black/20 sm:p-6">
-            <div className="flex flex-col gap-5">
-                <div>
-                    <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
-                        <GitBranch size={16} />
-                        Repository
-                    </div>
+        <section className="relative overflow-hidden rounded-2xl border border-white/9 bg-[#0d121b]/80 p-5 shadow-2xl shadow-black/20 sm:p-6 glass-card-hover">
 
-                    <p className="mt-1 text-xs text-slate-600">
-                        Use a public GitHub repository URL.
-                    </p>
+            {/* Decorative top-right accent */}
+            <div className="absolute top-4 right-4 h-8 w-8 rounded-full bg-indigo-500/20 blur-sm" />
+
+            <div className="relative z-10 flex flex-col gap-5">
+                <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
+                    <GitBranch size={16} />
+                    Repository
                 </div>
+
+                <p className="mt-1 text-xs text-slate-600">
+                    Use a public GitHub repository URL.
+                </p>
 
                 <div className="flex flex-col gap-3 lg:flex-row">
                     <div className="relative flex-1">
@@ -52,14 +55,18 @@ function RepositoryCard({
                             }
                             onKeyDown={handleKeyDown}
                             placeholder="https://github.com/owner/repository"
-                            className="h-12 w-full rounded-xl border border-white/9 bg-black/20 pl-11 pr-4 text-sm text-slate-200 placeholder:text-slate-700 outline-none transition focus:border-white/20"
+                            className="input-enhanced"
                         />
                     </div>
 
                     <button
                         onClick={onAnalyze}
                         disabled={isIndexing}
-                        className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-semibold text-slate-950 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+                        className={`inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-semibold text-slate-950 shadow-lg shadow-black/20 transition-all duration-300 ${
+                            isIndexing
+                                ? "pointer-events-none opacity-50"
+                                : "hover:bg-slate-200 hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.98]"
+                        }`}
                     >
                         {isIndexing ? (
                             <>
@@ -86,25 +93,26 @@ function RepositoryCard({
                 </div>
 
                 {isIndexing ? (
-                    <div className="rounded-xl border border-white/7 bg-white/[0.02] p-4">
-                        <div className="flex items-center justify-between gap-4">
+                    <div className="rounded-xl border border-white/7 bg-white/[0.02] p-4 glass-card">
+                        <div className="flex items-center justify-between gap-4 mb-3">
                             <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
                                 <Loader2
                                     size={14}
                                     className="animate-spin text-slate-500"
                                 />
 
-                                {statusMessage}
+                                <span className="animate-pulse">{statusMessage}</span>
                             </div>
 
-                            <span className="text-xs font-semibold tabular-nums text-slate-400">
+                            <span className="flex items-center gap-1 text-xs font-semibold tabular-nums text-emerald-400">
                                 {progress}%
+                                <span className="text-xs opacity-70">done</span>
                             </span>
                         </div>
 
-                        <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/[0.05]">
+                        <div className="mt-1 h-2 overflow-hidden rounded-full bg-white/[0.05]">
                             <div
-                                className="h-full rounded-full bg-white transition-[width] duration-500 ease-out"
+                                className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-indigo-400 transition-[width] duration-500 ease-out"
                                 style={{
                                     width: `${Math.max(
                                         0,
@@ -124,13 +132,19 @@ function RepositoryCard({
                         {isReady ? (
                             <CheckCircle2
                                 size={14}
-                                className="text-emerald-400"
+                                className="text-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.4)]"
                             />
                         ) : (
-                            <Bot size={14} />
+                            <Bot size={14} className="text-slate-500" />
                         )}
 
-                        {statusMessage}
+                        {statusMessage ? (
+                            <span className="text-slate-400">{statusMessage}</span>
+                        ) : (
+                            <span className="text-slate-400">
+                                {isReady ? "Ready to ask questions" : "No repository connected"}
+                            </span>
+                        )}
                     </div>
                 )}
             </div>

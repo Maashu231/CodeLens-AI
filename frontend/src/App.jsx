@@ -10,19 +10,17 @@ import AskCard from "./components/AskCard";
 import AnswerPanel from "./components/AnswerPanel";
 import ErrorBanner from "./components/ErrorBanner";
 import CodeViewerModal from "./components/CodeViewerModal";
+import Toast from "./components/Toast";
 
 import { useRepositoryIndexing } from "./hooks/useRepositoryIndexing";
 import { useCodeLensQuery } from "./hooks/useCodeLensQuery";
 import { useBugInvestigation } from "./hooks/useBugInvestigation";
 import { useBackendHealth } from "./hooks/useBackendHealth";
 
-
 function App() {
-  const [repositoryUrl, setRepositoryUrl] =
-    useState("");
+  const [repositoryUrl, setRepositoryUrl] = useState("");
 
-  const [selectedSource, setSelectedSource] =
-    useState(null);
+  const [selectedSource, setSelectedSource] = useState(null);
 
   const [mode, setMode] = useState("ask");
 
@@ -66,75 +64,60 @@ function App() {
     handleBugQuestionKeyDown,
   } = useBugInvestigation();
 
+  const [toast, setToast] = useState(null);
+
+  function showToast(type, message) {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 5000);
+  }
+
   function handleModeChange(nextMode) {
     setMode(nextMode);
-
     resetAnswer();
     resetBugInvestigation();
     setSelectedSource(null);
   }
 
-
   function handleInvestigate() {
     setSelectedSource(null);
-
-    investigateBug(
-      repositoryUrl
-    );
+    investigateBug(repositoryUrl);
   }
 
-
-  const errorMessage =
-    queryError ||
-    bugError ||
-    indexingError;
-
+  const errorMessage = queryError || bugError || indexingError;
 
   function handleRepositoryChange(value) {
     setRepositoryUrl(value);
-
-    if (
-      value.trim() !==
-      repositoryUrl.trim()
-    ) {
+    if (value.trim() !== repositoryUrl.trim()) {
       resetIndexing();
       resetAnswer();
       setSelectedSource(null);
     }
   }
 
-
   async function handleAnalyze() {
     resetAnswer();
     setSelectedSource(null);
-
-    await startIndexing(
-      repositoryUrl
-    );
+    await startIndexing(repositoryUrl);
   }
-
 
   async function handleAsk() {
     setSelectedSource(null);
-
-    await askQuestion(
-      repositoryUrl
-    );
+    await askQuestion(repositoryUrl);
   }
 
-
   return (
-    <div className="min-h-screen bg-[#080b12] text-slate-100">
-
-      {/* Background glow */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute left-[8%] top-[-10%] h-96 w-96 rounded-full bg-violet-600/10 blur-3xl" />
-
-        <div className="absolute right-[5%] top-[20%] h-80 w-80 rounded-full bg-cyan-500/5 blur-3xl" />
+    <div className="min-h-screen bg-background text-foreground font-sans">
+      {/* Background glow effects */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden z-0">
+        <div className="absolute top-[-10%] left-[-10%] h-[600px] w-[600px] rounded-full bg-indigo-500/[0.08] blur-[120px]" />
+        <div className="absolute top-[20%] right-[-10%] h-[500px] w-[500px] rounded-full bg-emerald-500/[0.08] blur-[120px]" />
+        <div className="absolute bottom-[-10%] left-[20%] h-[400px] w-[400px] rounded-full bg-pink-500/[0.06] blur-[100px]" />
       </div>
 
+      {/* Toast container */}
+      {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
 
-      <div className="relative mx-auto flex min-h-screen max-w-[1500px]">
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-[1600px]">
 
         {/* Sidebar */}
         <Sidebar
@@ -143,9 +126,8 @@ function App() {
           chunksIndexed={chunksIndexed}
         />
 
-
         {/* Main content */}
-        <main className="flex min-w-0 flex-1 flex-col">
+        <main className="flex min-w-0 flex-1 flex-col relative z-10">
 
           <Header
             isReady={isReady}
@@ -154,86 +136,54 @@ function App() {
             onRefreshHealth={refreshBackendHealth}
           />
 
-
           <div className="mx-auto w-full max-w-5xl flex-1 px-5 py-10 sm:px-8 lg:py-14">
 
             {/* Hero */}
-            <section className="mb-10">
+            <section className="mb-12 fade-in-up">
+              <div className="relative group">
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5 text-xs text-slate-400 group-hover:border-white/20 transition-colors duration-300 mb-5">
+                  <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <Bot size={13} className="ml-1" />
+                  Codebase intelligence
+                </div>
 
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5 text-xs text-slate-500">
-                <Bot size={13} />
+                <h1 className="max-w-3xl hero-title tracking-tighter sm:text-5xl lg:text-6xl xl:text-7xl leading-tight">
+                  Talk to your <br />
+                  <span className="hero-gradient-text">codebase.</span>
+                </h1>
 
-                Understand unfamiliar code faster
+                <p className="mt-6 max-w-xl hero-subtitle text-lg leading-8 text-slate-400">
+                  Connect any GitHub repository and ask questions in plain English.
+                  Get answers with line-by-line code citations, architecture insights,
+                  and bug investigation — all powered by semantic search and AI.
+                </p>
               </div>
-
-
-              <h1 className="max-w-3xl text-4xl font-semibold tracking-[-0.04em] text-white sm:text-5xl lg:text-6xl">
-                Talk to your
-
-                <span className="text-slate-500">
-                  {" "}codebase.
-                </span>
-              </h1>
-
-
-              <p className="mt-5 max-w-2xl text-base leading-7 text-slate-500 sm:text-lg">
-                Connect a GitHub repository, ask a question,
-                and get answers grounded in the actual source code.
-              </p>
-
             </section>
 
-
-            {/* Repository */}
+            {/* Repository Card */}
             <RepositoryCard
-              repositoryUrl={
-                repositoryUrl
-              }
-              onRepositoryChange={
-                handleRepositoryChange
-              }
-              onAnalyze={
-                handleAnalyze
-              }
-              isIndexing={
-                isIndexing
-              }
-              isReady={
-                isReady
-              }
-              progress={
-                progress
-              }
-              statusMessage={
-                statusMessage
-              }
+              repositoryUrl={repositoryUrl}
+              onRepositoryChange={handleRepositoryChange}
+              onAnalyze={handleAnalyze}
+              isIndexing={isIndexing}
+              isReady={isReady}
+              progress={progress}
+              statusMessage={statusMessage}
+              showToast={showToast}
             />
-
 
             {/* Repository Explorer */}
             <RepositoryExplorer
-              repositoryUrl={
-                repositoryUrl
-              }
-              isReady={
-                isReady
-              }
-              onOpenSource={
-                setSelectedSource
-              }
+              repositoryUrl={repositoryUrl}
+              isReady={isReady}
+              onOpenSource={setSelectedSource}
             />
-
 
             {/* Architecture Overview */}
             <ArchitectureOverview
-              repositoryUrl={
-                repositoryUrl
-              }
-              isReady={
-                isReady
-              }
+              repositoryUrl={repositoryUrl}
+              isReady={isReady}
             />
-
 
             {/* Ask CodeLens */}
             <AskCard
@@ -257,69 +207,37 @@ function App() {
               onAsk={handleAsk}
               onInvestigate={handleInvestigate}
 
-              onSuggestedQuestion={
-                handleSuggestedQuestion
-              }
+              onSuggestedQuestion={handleSuggestedQuestion}
+              onSuggestedBugQuestion={(value) => setBugQuestion(value)}
 
-              onSuggestedBugQuestion={(value) => {
-                setBugQuestion(value);
-              }}
-
-              onQuestionKeyDown={(event) =>
-                handleQuestionKeyDown(
-                  event,
-                  repositoryUrl
-                )
-              }
-
-              onBugQuestionKeyDown={(event) =>
-                handleBugQuestionKeyDown(
-                  event,
-                  repositoryUrl
-                )
-              }
+              onQuestionKeyDown={(event) => handleQuestionKeyDown(event, repositoryUrl)}
+              onBugQuestionKeyDown={(event) => handleBugQuestionKeyDown(event, repositoryUrl)}
+              showToast={showToast}
             />
 
             {/* Error */}
-            <ErrorBanner
-              message={
-                errorMessage
-              }
-            />
-
+            <ErrorBanner message={errorMessage} />
 
             {/* Answer */}
             <AnswerPanel
-              answerData={
-                mode === "bug"
-                  ? bugAnswerData
-                  : answerData
-              }
+              answerData={mode === "bug" ? bugAnswerData : answerData}
               onSelectSource={setSelectedSource}
             />
 
           </div>
-
         </main>
-
       </div>
-
 
       {/* Source viewer */}
       <CodeViewerModal
-        key={
-          selectedSource
-            ? `${selectedSource.file}:${selectedSource.start_line}-${selectedSource.end_line}:${selectedSource.symbol || ""}`
-            : "no-source"
-        }
+        key={selectedSource ? `${selectedSource.file}:${selectedSource.start_line}-${selectedSource.end_line}:${selectedSource.symbol || ""}` : "no-source"}
         source={selectedSource}
         repositoryUrl={repositoryUrl}
         onClose={() => setSelectedSource(null)}
+        showToast={showToast}
       />
-
     </div>
   );
 }
-
 
 export default App;
