@@ -51,8 +51,8 @@ export function useRepositoryIndexing(): {
             setStatusMessage("Starting indexing job...");
 
             try {
-                const job = await startRepositoryIndexing(trimmedUrl) as IndexingJob;
-                setJobId(job.id);
+                const job = await startRepositoryIndexing(trimmedUrl);
+                setJobId(job.job_id);
                 setStatusMessage("Indexing repository...");
             } catch (error) {
                 setErrorMessage(

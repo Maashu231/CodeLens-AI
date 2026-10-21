@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { investigateRepositoryBug } from "../services/api";
 import type { AnswerData } from "../types";
 

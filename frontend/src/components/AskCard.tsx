@@ -77,7 +77,7 @@ function AskCard({
     onQuestionKeyDown,
     onBugQuestionKeyDown,
 
-    showToast,
+    showToast: _showToast,
 }: AskCardProps) {
     const isBugMode = mode === "bug";
 

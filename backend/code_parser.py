@@ -17,13 +17,17 @@ def get_node_text(node) -> str:
 
 def extract_imports(tree):
     imports = []
+    _MAX_DEPTH = 500
 
-    def visit(node):
+    def visit(node, depth=0):
+        if depth > _MAX_DEPTH:
+            return
+
         if node.type in {"import_statement", "import_from_statement"}:
             imports.append(get_node_text(node).strip())
 
         for child in node.children:
-            visit(child)
+            visit(child, depth + 1)
 
     visit(tree.root_node)
 
@@ -32,8 +36,12 @@ def extract_imports(tree):
 
 def extract_functions(tree):
     functions = []
+    _MAX_DEPTH = 500
 
-    def visit(node):
+    def visit(node, depth=0):
+        if depth > _MAX_DEPTH:
+            return
+
         if node.type == "function_definition":
             name_node = node.child_by_field_name("name")
             parameters_node = node.child_by_field_name("parameters")
@@ -52,7 +60,10 @@ def extract_functions(tree):
             calls = []
             returns = []
 
-            def inspect_function_body(child):
+            def inspect_function_body(child, inner_depth=0):
+                if inner_depth > _MAX_DEPTH:
+                    return
+
                 if child.type == "call":
                     function_node = child.child_by_field_name("function")
 
@@ -67,7 +78,7 @@ def extract_functions(tree):
                     )
 
                 for grandchild in child.children:
-                    inspect_function_body(grandchild)
+                    inspect_function_body(grandchild, inner_depth + 1)
 
             inspect_function_body(node)
 
@@ -96,7 +107,7 @@ def extract_functions(tree):
             })
 
         for child in node.children:
-            visit(child)
+            visit(child, depth + 1)
 
     visit(tree.root_node)
 

@@ -17,8 +17,7 @@ import { useCodeLensQuery } from "./hooks/useCodeLensQuery";
 import { useBugInvestigation } from "./hooks/useBugInvestigation";
 import { useBackendHealth } from "./hooks/useBackendHealth";
 
-import type { Source, AnswerData, ToastType } from "./types";
-import type { QueryMode } from "./types";
+import type { Source, ToastType, QueryMode } from "./types";
 
 function App() {
   const [repositoryUrl, setRepositoryUrl] = useState("");
@@ -67,18 +66,12 @@ function App() {
     handleBugQuestionKeyDown,
   } = useBugInvestigation();
 
-  const [currentToastId, setCurrentToastId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ type: ToastType; message: string } | null>(null);
 
-  function showToast(type: ToastType, message: string) {
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-    const toast: { id: string; type: ToastType; message: string } = { id, type, message };
-    setCurrentToastId(toast.id);
-
-    // The Toast component renders the latest toast via the id prop.
-    // We pass a small "toast object" as the id (stringified for the toast).
-    // Since we only ever show one at a time, we use a simple state approach.
-    // @ts-ignore — Toast component accepts id, type, message, onClose
-    (window as unknown as Record<string, unknown>).__currentToast = toast;
+  function showToast(type: string, message: string) {
+    const validTypes: ToastType[] = ["success", "error", "info"];
+    const toastType: ToastType = validTypes.includes(type as ToastType) ? (type as ToastType) : "info";
+    setToast({ type: toastType, message });
   }
 
   function handleModeChange(nextMode: QueryMode) {
@@ -115,8 +108,6 @@ function App() {
     await askQuestion(repositoryUrl);
   }
 
-  // We store the toast details in local state instead of the window hack above.
-  // This replaces the showToast approach used above.
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans overflow-x-hidden">
@@ -129,7 +120,13 @@ function App() {
       </div>
 
       {/* Toast container */}
-      {/* We'll use a state-based toast instead of the window hack */}
+      {toast && (
+        <Toast
+          type={toast.type}
+          message={toast.message}
+          onClose={() => setToast(null)}
+        />
+      )}
 
       <div className="relative z-10 mx-auto flex min-h-screen max-w-[1600px]">
 

@@ -1,5 +1,5 @@
-export function formatIndexingStage(stage) {
-    const stages = {
+export function formatIndexingStage(stage: string): string {
+    const stages: Record<string, string> = {
         queued: "Queued",
         starting: "Starting",
         files_discovered: "Discovering files",

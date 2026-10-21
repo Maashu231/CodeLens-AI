@@ -3,26 +3,23 @@
  * Handles JSON parsing, error normalization, and streaming events.
  */
 
-interface RequestOptions extends RequestInit {
-    body?: string | Record<string, unknown>;
-}
-
-async function request(url: string, options: RequestOptions = {}): Promise<unknown> {
+async function request<T = unknown>(url: string, options: RequestInit = {}): Promise<T> {
     const response = await fetch(url, options);
 
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-        const detail = (data as Record<string, unknown>).detail;
-        const message = (data as Record<string, unknown>).message;
+        const errorData = data as Record<string, unknown>;
+        const detail = errorData.detail;
+        const message = errorData.message;
         throw new Error(
-            (detail as string) ||
-            (message as string) ||
+            (typeof detail === "string" ? detail : null) ||
+            (typeof message === "string" ? message : null) ||
             "Something went wrong with the request."
         );
     }
 
-    return data;
+    return data as T;
 }
 
 export async function getBackendHealth(): Promise<{ status: string; version: string }> {

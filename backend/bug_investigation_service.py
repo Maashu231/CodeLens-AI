@@ -1,6 +1,6 @@
 from collections import OrderedDict
 
-from answer_service import search_repository
+from retrieval_service import search_repository
 from context_builder import build_context
 from github_service import get_file_content, get_repository
 from llm_service import GroqLLM

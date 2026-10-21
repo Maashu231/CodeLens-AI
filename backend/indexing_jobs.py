@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from threading import Lock
 from uuid import uuid4
 
@@ -6,11 +6,34 @@ from uuid import uuid4
 _jobs = {}
 _lock = Lock()
 
+# Jobs older than this are eligible for cleanup.
+_JOB_TTL = timedelta(hours=4)
+
+
+def _cleanup_old_jobs():
+    """Remove completed/failed jobs older than _JOB_TTL. Call under _lock."""
+    now = datetime.now(timezone.utc)
+
+    stale = [
+        job_id
+        for job_id, job in _jobs.items()
+        if job["status"] in {"completed", "failed"}
+        and (
+            now - datetime.fromisoformat(job["updated_at"])
+            > _JOB_TTL
+        )
+    ]
+
+    for job_id in stale:
+        del _jobs[job_id]
+
 
 def create_job(owner: str, repo: str) -> str:
     job_id = str(uuid4())
 
     with _lock:
+        _cleanup_old_jobs()
+
         _jobs[job_id] = {
             "job_id": job_id,
             "repository": f"{owner}/{repo}",

@@ -73,31 +73,112 @@ def create_chunks(file: dict, repository: str):
             )
 
     else:
-        start_line = 1
-        end_line = len(file["content"].splitlines())
+        # For non-Python files, use a sliding-window line chunker so large files
+        # don't exceed the embedding model's token limit and are retrievable at
+        # finer granularity. Small files (under the window) become a single chunk.
+        lines = file["content"].splitlines()
+        total_lines = len(lines)
 
-        chunk_id = create_chunk_id(
-            repository,
-            file["sha"],
-            None,
-            start_line,
-            end_line
-        )
+        WINDOW_SIZE = 80   # lines per chunk
+        STRIDE = 60        # lines to advance (20-line overlap)
 
-        chunks.append(
-            CodeChunk(
-                chunk_id=chunk_id,
-                repository=repository,
-                file_path=file["path"],
-                file_sha=file["sha"],
-                language=file["language"],
-                symbol_name=None,
-                symbol_type="file",
-                start_line=start_line,
-                end_line=end_line,
-                content=file["content"],
-                imports=imports
+        if total_lines == 0:
+            # Empty file — emit one placeholder chunk.
+            chunk_id = create_chunk_id(
+                repository,
+                file["sha"],
+                None,
+                1,
+                1,
             )
-        )
+
+            chunks.append(
+                CodeChunk(
+                    chunk_id=chunk_id,
+                    repository=repository,
+                    file_path=file["path"],
+                    file_sha=file["sha"],
+                    language=file["language"],
+                    symbol_name=None,
+                    symbol_type="file",
+                    start_line=1,
+                    end_line=1,
+                    content="",
+                    imports=imports,
+                )
+            )
+
+        elif total_lines <= WINDOW_SIZE:
+            # File fits in a single chunk.
+            chunk_id = create_chunk_id(
+                repository,
+                file["sha"],
+                None,
+                1,
+                total_lines,
+            )
+
+            chunks.append(
+                CodeChunk(
+                    chunk_id=chunk_id,
+                    repository=repository,
+                    file_path=file["path"],
+                    file_sha=file["sha"],
+                    language=file["language"],
+                    symbol_name=None,
+                    symbol_type="file",
+                    start_line=1,
+                    end_line=total_lines,
+                    content=file["content"],
+                    imports=imports,
+                )
+            )
+
+        else:
+            # Sliding window over the file.
+            window_start = 0
+
+            while window_start < total_lines:
+                window_end = min(
+                    window_start + WINDOW_SIZE,
+                    total_lines,
+                )
+
+                start_line = window_start + 1
+                end_line = window_end
+
+                content = "\n".join(
+                    lines[window_start:window_end]
+                )
+
+                chunk_id = create_chunk_id(
+                    repository,
+                    file["sha"],
+                    None,
+                    start_line,
+                    end_line,
+                )
+
+                chunks.append(
+                    CodeChunk(
+                        chunk_id=chunk_id,
+                        repository=repository,
+                        file_path=file["path"],
+                        file_sha=file["sha"],
+                        language=file["language"],
+                        symbol_name=None,
+                        symbol_type="file",
+                        start_line=start_line,
+                        end_line=end_line,
+                        content=content,
+                        imports=imports,
+                    )
+                )
+
+                if window_end == total_lines:
+                    break
+
+                window_start += STRIDE
 
     return chunks
+

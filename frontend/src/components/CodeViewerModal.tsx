@@ -18,7 +18,6 @@ import {
     getRepositoryImpact,
 } from "../services/api";
 
-import { SkeletonText } from "./ui/Skeleton";
 import type { Source } from "../types";
 
 function getLanguageFromPath(path: string): string {
@@ -41,7 +40,7 @@ function getLanguageFromPath(path: string): string {
         tsconfig: "json",
     };
 
-    return languages[extension] || "text";
+    return (extension && languages[extension]) || "text";
 }
 
 interface ImpactItem {
@@ -112,6 +111,7 @@ function CodeViewerModal({
     );
 
     async function handleCopy() {
+        if (!source) return;
         const text =
             `${source.file}:${source.start_line}-${source.end_line}`;
 
@@ -129,6 +129,7 @@ function CodeViewerModal({
     }
 
     async function handleHistory() {
+        if (!source) return;
         if (showHistory) {
             setShowHistory(false);
             return;
@@ -163,6 +164,7 @@ function CodeViewerModal({
     }
 
     async function handleImpact() {
+        if (!source) return;
         if (showImpact) {
             setShowImpact(false);
             return;

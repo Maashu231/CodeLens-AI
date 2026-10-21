@@ -21,15 +21,35 @@ export function useBackendHealth(): {
         try {
             const data = await getBackendHealth() as BackendHealth;
             setBackendStatus("connected");
-            setBackendVersion(data.version ?? null);
+            setBackendVersion(data?.version ?? null);
         } catch {
             setBackendStatus("disconnected");
         }
     }, []);
 
     useEffect(() => {
-        checkHealth();
-    }, [checkHealth]);
+        let isCancelled = false;
+
+        async function verifyInitialConnection() {
+            try {
+                const data = await getBackendHealth() as BackendHealth;
+                if (!isCancelled) {
+                    setBackendStatus("connected");
+                    setBackendVersion(data?.version ?? null);
+                }
+            } catch {
+                if (!isCancelled) {
+                    setBackendStatus("disconnected");
+                }
+            }
+        }
+
+        verifyInitialConnection();
+
+        return () => {
+            isCancelled = true;
+        };
+    }, []);
 
     return { status: backendStatus, version: backendVersion, checkHealth };
 }

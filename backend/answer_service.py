@@ -12,7 +12,7 @@ def answer_question(
         question,
         owner,
         repo,
-        3
+        5
     )
 
     if not results:

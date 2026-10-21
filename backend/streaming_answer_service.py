@@ -11,7 +11,7 @@ def prepare_streaming_answer(
         question,
         owner,
         repo,
-        3,
+        5,
     )
 
     if not results:

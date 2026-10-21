@@ -25,10 +25,10 @@ function Sidebar({
         : "No repository connected";
 
     const capabilities = [
-        ["Ask code questions", MessageSquareText],
-        ["Find relevant code", Search],
-        ["Grounded answers", Sparkles],
-        ["Source evidence", FileCode2],
+        { label: "Ask code questions", icon: MessageSquareText },
+        { label: "Find relevant code", icon: Search },
+        { label: "Grounded answers", icon: Sparkles },
+        { label: "Source evidence", icon: FileCode2 },
     ];
 
     return (
@@ -95,7 +95,7 @@ function Sidebar({
                 </div>
 
                 <div className="space-y-1">
-                    {capabilities.map(([label, Icon]) => (
+                    {capabilities.map(({ label, icon: Icon }) => (
                         <div
                             key={label}
                             className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-500 glass-card-hover"

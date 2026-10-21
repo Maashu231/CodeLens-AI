@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { streamRepositoryQuestion } from "../services/api";
 import type { AnswerData, Source } from "../types";
 
@@ -109,10 +109,7 @@ export function useCodeLensQuery(): {
                     }
 
                     if (event === "done") {
-                        setAnswerData((previous) => ({
-                            ...(previous || {}),
-                            is_streaming: false,
-                        }));
+                        setAnswerData((previous) => (previous ? { ...previous, is_streaming: false } : null));
                     }
 
                     if (event === "error") {
@@ -130,10 +127,7 @@ export function useCodeLensQuery(): {
                 }
             );
 
-            setAnswerData((previous) => ({
-                ...(previous || {}),
-                is_streaming: false,
-            }));
+            setAnswerData((previous) => (previous ? { ...previous, is_streaming: false } : null));
         } catch (error) {
             setErrorMessage(
                 error instanceof Error

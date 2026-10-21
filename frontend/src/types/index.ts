@@ -38,7 +38,6 @@ export interface AnswerData {
     answer: string;
     sources: Source[];
     is_streaming: boolean;
-    sources?: Source[];
 }
 
 /** Statistics for change-impact analysis. */

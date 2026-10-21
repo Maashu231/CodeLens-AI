@@ -1,5 +1,7 @@
 from collections import defaultdict, deque
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
+from threading import Lock
 
 from code_parser import (
     extract_functions,
@@ -7,6 +9,59 @@ from code_parser import (
     parse_code,
 )
 from repository_service import get_file_contents
+
+
+# ---------------------------------------------------------------------------
+# Dependency graph cache
+# Cache the built graph per repository to avoid re-downloading the full repo
+# archive on every impact/architecture request. Entries expire after 10 minutes.
+# ---------------------------------------------------------------------------
+_graph_cache: dict = {}
+_graph_cache_lock = Lock()
+_GRAPH_CACHE_TTL = timedelta(minutes=10)
+
+
+def _get_cached_graph(owner: str, repo: str):
+    """Return the cached graph for owner/repo if it is still fresh."""
+    key = f"{owner}/{repo}"
+    with _graph_cache_lock:
+        entry = _graph_cache.get(key)
+        if entry is None:
+            return None
+        if datetime.now(timezone.utc) - entry["cached_at"] > _GRAPH_CACHE_TTL:
+            del _graph_cache[key]
+            return None
+        return entry["data"]
+
+
+def _set_cached_graph(owner: str, repo: str, data: dict):
+    """Store a graph in the cache."""
+    key = f"{owner}/{repo}"
+    with _graph_cache_lock:
+        _graph_cache[key] = {
+            "data": data,
+            "cached_at": datetime.now(timezone.utc),
+        }
+
+
+def _get_repository_graph(owner: str, repo: str) -> tuple[dict, dict]:
+    """
+    Return (repository_data, graph) using the cache where possible.
+    repository_data is the raw file listing; graph is the built dependency graph.
+    """
+    cached = _get_cached_graph(owner, repo)
+    if cached is not None:
+        return cached["repository_data"], cached["graph"]
+
+    repository = get_file_contents(owner, repo)
+    graph = build_dependency_graph(repository["files"])
+
+    _set_cached_graph(owner, repo, {
+        "repository_data": repository,
+        "graph": graph,
+    })
+
+    return repository, graph
 
 
 def _normalize_path(path: str) -> str:
@@ -558,25 +613,17 @@ def get_repository_dependency_graph(
     owner: str,
     repo: str,
 ) -> dict:
-    repository = get_file_contents(
-        owner,
-        repo,
-    )
+    repository, graph = _get_repository_graph(owner, repo)
 
-    graph = build_dependency_graph(
-        repository["files"]
-    )
-
-    graph["repository"] = (
+    # Return a copy so callers can safely annotate it.
+    result = dict(graph)
+    result["repository"] = (
         f"{repository['owner']}/"
         f"{repository['repository']}"
     )
+    result["branch"] = repository["branch"]
 
-    graph["branch"] = (
-        repository["branch"]
-    )
-
-    return graph
+    return result
 
 
 def get_repository_impact(
@@ -585,14 +632,7 @@ def get_repository_impact(
     path: str,
     symbol: str | None = None,
 ) -> dict:
-    repository = get_file_contents(
-        owner,
-        repo,
-    )
-
-    graph = build_dependency_graph(
-        repository["files"]
-    )
+    repository, graph = _get_repository_graph(owner, repo)
 
     result = analyze_impact(
         graph,
@@ -604,9 +644,6 @@ def get_repository_impact(
         f"{repository['owner']}/"
         f"{repository['repository']}"
     )
-
-    result["branch"] = (
-        repository["branch"]
-    )
+    result["branch"] = repository["branch"]
 
     return result

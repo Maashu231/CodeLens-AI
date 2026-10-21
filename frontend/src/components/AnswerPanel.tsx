@@ -73,7 +73,7 @@ function AnswerPanel({
                                 );
                             },
 
-                            p({ children }: { children: React.ReactNode }) {
+                            p({ children }: { children?: React.ReactNode }) {
                                 return (
                                     <p className="mb-4 last:mb-0">
                                         {children}
@@ -81,7 +81,7 @@ function AnswerPanel({
                                 );
                             },
 
-                            ul({ children }: { children: React.ReactNode }) {
+                            ul({ children }: { children?: React.ReactNode }) {
                                 return (
                                     <ul className="mb-4 list-disc space-y-1 pl-5">
                                         {children}
@@ -89,7 +89,7 @@ function AnswerPanel({
                                 );
                             },
 
-                            ol({ children }: { children: React.ReactNode }) {
+                            ol({ children }: { children?: React.ReactNode }) {
                                 return (
                                     <ol className="mb-4 list-decimal space-y-1 pl-5">
                                         {children}
@@ -97,7 +97,7 @@ function AnswerPanel({
                                 );
                             },
 
-                            h1({ children }: { children: React.ReactNode }) {
+                            h1({ children }: { children?: React.ReactNode }) {
                                 return (
                                     <h1 className="mb-4 text-xl font-semibold text-white">
                                         {children}
@@ -105,7 +105,7 @@ function AnswerPanel({
                                 );
                             },
 
-                            h2({ children }: { children: React.ReactNode }) {
+                            h2({ children }: { children?: React.ReactNode }) {
                                 return (
                                     <h2 className="mb-3 mt-6 text-lg font-semibold text-white">
                                         {children}
@@ -113,7 +113,7 @@ function AnswerPanel({
                                 );
                             },
 
-                            h3({ children }: { children: React.ReactNode }) {
+                            h3({ children }: { children?: React.ReactNode }) {
                                 return (
                                     <h3 className="mb-2 mt-5 text-base font-semibold text-slate-200">
                                         {children}
@@ -121,7 +121,7 @@ function AnswerPanel({
                                 );
                             },
 
-                            blockquote({ children }: { children: React.ReactNode }) {
+                            blockquote({ children }: { children?: React.ReactNode }) {
                                 return (
                                     <blockquote className="my-4 border-l-2 border-slate-600 pl-4 text-slate-400">
                                         {children}
@@ -129,7 +129,7 @@ function AnswerPanel({
                                 );
                             },
 
-                            a({ children, href }: { children: React.ReactNode; href?: string }) {
+                            a({ children, href }: { children?: React.ReactNode; href?: string }) {
                                 return (
                                     <a
                                         href={href}

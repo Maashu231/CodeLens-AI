@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 
 import { getRepositoryOverview } from "../services/api";
-import { SkeletonText, SkeletonBlock } from "./ui/Skeleton";
 
 interface LanguageItem {
     language: string;

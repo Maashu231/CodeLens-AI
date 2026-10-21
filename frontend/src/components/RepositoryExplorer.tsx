@@ -11,7 +11,6 @@ import {
     getRepositoryFile,
     getRepositoryTree,
 } from "../services/api";
-import { SkeletonText } from "./ui/Skeleton";
 import type { RepositoryFile } from "../types";
 
 function getLanguage(path: string): string {
@@ -34,7 +33,7 @@ function getLanguage(path: string): string {
         yaml: "YAML",
     };
 
-    return languages[extension] || "FILE";
+    return (extension && languages[extension]) || "FILE";
 }
 
 function formatSize(bytes: number): string {
@@ -57,7 +56,7 @@ function createTree(files: RepositoryFile[]) {
 
     for (const file of files) {
         const parts = file.path.split("/");
-        const fileName = parts.pop();
+        const fileName = parts.pop() || file.name;
 
         let current = root;
 
